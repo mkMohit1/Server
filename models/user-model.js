@@ -17,7 +17,7 @@ const userSchema = new  mongoose.Schema({
         type: String,
         default:"https://cdn-icons-png.flaticon.com/128/2202/2202112.png",
     },
-    opt:{
+    otp:{
         type:String,
         require:false
     }
