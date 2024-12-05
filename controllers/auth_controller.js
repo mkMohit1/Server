@@ -65,4 +65,22 @@ const users = async (req, res) => {
     }
 };
 
-module.exports = {home, register, login, users};
+const sendOtp = async(req,res)=>{
+    try {
+            const [mobileNumber, otp]= req.body;
+            const Users = await  User.findOne({ mobileNumber });
+            if(Users.length ==0){
+                res.status(200).json({
+                    mobileNumber,
+                    otp
+                });
+            }
+    } catch (error) {
+        res.status(500).json({
+            message: "An error occurred while fetching users.",
+            error: error.message,
+        });
+    }
+}
+
+module.exports = {home, register, login, users,sendOtp};
