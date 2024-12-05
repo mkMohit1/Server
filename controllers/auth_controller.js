@@ -66,9 +66,9 @@ const users = async (req, res) => {
 };
 
 const sendOtp = async(req,res)=>{
+    console.log(req.body);
     try {
-        console.log(req.body);
-            const [mobileNumber, otp]= req.body;
+            const {mobileNumber, otp}= req.body;
             const Users = await  User.findOne({ mobileNumber });
             if(Users){
                 res.status(200).json({
