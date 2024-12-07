@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { home, login, register, users,sendOtp,addBlog, Blogs} = require('../controllers/auth_controller'); // Import the home controller
+const { home, login, register, users,sendOtp,addBlog, Blogs,fetchBlog} = require('../controllers/auth_controller'); // Import the home controller
 
 // Define the route
 router.route('/').get(home);
@@ -11,5 +11,6 @@ router.route('/send-otp').post(sendOtp);
 // router.route('/admin-panel').post();
 router.route('/BlogPost').post(addBlog);
 router.route('/blogs').get(Blogs);
+router.route('/blog/:id').get(fetchBlog);
 
 module.exports = router;

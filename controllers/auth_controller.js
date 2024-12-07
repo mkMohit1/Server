@@ -118,4 +118,13 @@ const Blogs = async(req,res)=>{
     }
 }
 
-module.exports = {home, register, login, users,sendOtp, addBlog,Blogs};
+const fetchBlog = async(req,res)=>{
+    try {
+        console.log(req.body);
+        console.log(req.param);
+    } catch (error) {
+        
+    }
+}
+
+module.exports = {home, register, login, users,sendOtp, addBlog, Blogs, fetchBlog};
