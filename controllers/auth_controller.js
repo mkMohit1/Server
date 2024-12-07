@@ -100,4 +100,22 @@ const addBlog = async(req,res)=>{
     }
 } 
 
-module.exports = {home, register, login, users,sendOtp, addBlog};
+const Blogs = async(req,res)=>{
+    try {
+        const Blogs = await Blog.find();
+        if (Blogs.length === 0) {
+            return res.status(404).json({
+                message: "No users found. Please add some users.",
+            });
+        }
+
+        res.status(200).json(Blogs);
+    } catch (error) {
+        res.status(500).json({
+            message: "An error occurred while fetching users.",
+            error: error.message,
+        });
+    }
+}
+
+module.exports = {home, register, login, users,sendOtp, addBlog,Blogs};
