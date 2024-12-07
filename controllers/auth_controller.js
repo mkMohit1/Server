@@ -118,13 +118,20 @@ const Blogs = async(req,res)=>{
     }
 }
 
-const fetchBlog = async(req,res)=>{
+const fetchBlog = async (req, res) => {
     try {
-        console.log(req.body);
-        console.log(req.param);
-    } catch (error) {
+        const blogId = req.params.id;
+        const blog = await Blog.findById(blogId);
         
+        if (!blog) {
+            return res.status(404).json({ message: "Blog not found" });
+        }
+
+        res.json(blog);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching blog" });
     }
-}
+};
 
 module.exports = {home, register, login, users,sendOtp, addBlog, Blogs, fetchBlog};
