@@ -1,6 +1,7 @@
 // home
 
 const User = require("../models/user-model");
+const Blog = require("../models/blog-model");
 
 const home = async(req,res)=>{
     try {
@@ -84,4 +85,19 @@ const sendOtp = async(req,res)=>{
     }
 }
 
-module.exports = {home, register, login, users,sendOtp};
+const addBlog = async(req,res)=>{
+    console.log("Register Request Body:", req.body);
+    try {
+        if(req.body){
+            const newBlog = new Blog(req.body);
+            await newBlog.save();
+             // Send success response after user is successfully created
+            res.status(201).json({ message: "new Blog successfully added" });
+        }
+    } catch (error) {
+         // Catch any errors and send an error response
+         res.status(500).json({ message: `Internal Server Error: ${error}`});
+    }
+} 
+
+module.exports = {home, register, login, users,sendOtp, addBlog};
