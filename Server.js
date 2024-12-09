@@ -17,8 +17,8 @@ app.use((req, res) => {
 
 // Start the server
 const PORT = 5000;
-connectDb().then(()=>{
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+connectDb().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 });

@@ -1,152 +1,129 @@
-// home
 const multer = require('multer');
+const path = require('path');
 const User = require("../models/user-model");
 const Blog = require("../models/blog-model");
 
-// Set up multer to store uploaded files (coverImage in this case)
+// Define storage configuration for multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, 'uploads/'); // Destination folder for uploaded files
+        cb(null, path.join(__dirname, '../uploads/'));  // Use absolute path
     },
     filename: (req, file, cb) => {
-      cb(null, Date.now() + '-' + file.originalname); // File name format
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));  // Add unique file name
     }
 });
 
+// Initialize multer upload
 const upload = multer({ storage: storage });
 
-
-const home = async(req,res)=>{
+// Controller function to handle home route
+const home = async (req, res) => {
     try {
         res.status(200).send("Welcome to the auth router!");
     } catch (error) {
-        console.log("error ",error);
+        console.log("Error:", error);
     }
-}
+};
 
+// Controller function to handle user registration
 const register = async (req, res) => {
-    console.log("Register Request Body:", req.body);
     try {
         const { userName, mobileNumber } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({ mobileNumber });
         if (existingUser) {
-            // If user exists, return an error response
             return res.status(400).json({ message: "User already exists" });
         }
 
-        // If no user exists, create a new one
         const newUser = new User({ userName, mobileNumber });
         await newUser.save();
-
-        // Send success response after user is successfully created
         res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
-        // Catch any errors and send an error response
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
-
-const login = async (req,res) => {
+// Controller function for user login
+const login = async (req, res) => {
     try {
         console.log(req.body);
         res.status(200).json(req.body);
-    } catch (error) { 
-        res.status(400).json("internal server error");
+    } catch (error) {
+        res.status(400).json("Internal Server Error");
     }
-}
+};
 
-
+// Controller function to get users
 const users = async (req, res) => {
     try {
-        const Users = await User.find();
-
-        if (Users.length === 0) {
-            return res.status(404).json({
-                message: "No users found. Please add some users.",
-            });
+        const users = await User.find();
+        if (users.length === 0) {
+            return res.status(404).json({ message: "No users found" });
         }
-
-        res.status(200).json(Users);
+        res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({
-            message: "An error occurred while fetching users.",
-            error: error.message,
-        });
+        res.status(500).json({ message: "Error fetching users" });
     }
 };
 
-const sendOtp = async(req,res)=>{
-    console.log(req.body);
+// Controller function to send OTP
+const sendOtp = async (req, res) => {
     try {
-            const {mobileNumber, otp}= req.body;
-            const Users = await  User.findOne({ mobileNumber });
-            if(Users){
-                res.status(200).json({
-                    mobileNumber,
-                    otp
-                });
-            }
+        const { mobileNumber, otp } = req.body;
+        const user = await User.findOne({ mobileNumber });
+        if (user) {
+            res.status(200).json({ mobileNumber, otp });
+        }
     } catch (error) {
-        res.status(500).json({
-            message: "An error occurred while fetching users.",
-            error: error.message,
-        });
+        res.status(500).json({ message: "Error sending OTP" });
     }
-}
+};
 
- // Controller function to add a blog
+// Controller function to add a new blog
 const addBlog = async (req, res) => {
-  try {
-    if (req.file) {
-      req.body.coverImage = req.file.path; // Store file path
-    } else {
-      req.body.coverImage = 'default-image-url'; // Default URL if no image
-    }
-
-    const newBlog = new Blog(req.body);
-    await newBlog.save();
-
-    res.status(201).json({ message: 'New blog successfully added', blog: newBlog });
-  } catch (error) {
-    res.status(500).json({ message: `Internal Server Error: ${error.message}` });
-  }
-};
-
-const Blogs = async(req,res)=>{
     try {
-        const Blogs = await Blog.find();
-        if (Blogs.length === 0) {
-            return res.status(404).json({
-                message: "No users found. Please add some users.",
-            });
+        if (req.file) {
+            req.body.coverImage = req.file.path; // Store file path
+        } else {
+            req.body.coverImage = 'default-image-url'; // Provide a default image if no file
         }
 
-        res.status(200).json(Blogs);
+        const newBlog = new Blog(req.body);
+        await newBlog.save();
+        res.status(201).json({ message: 'New blog successfully added', blog: newBlog });
     } catch (error) {
-        res.status(500).json({
-            message: "An error occurred while fetching users.",
-            error: error.message,
-        });
+        res.status(500).json({ message: `Internal Server Error: ${error.message}` });
     }
-}
+};
 
+// Controller function to fetch all blogs
+const Blogs = async (req, res) => {
+    try {
+        const blogs = await Blog.find();
+        if (blogs.length === 0) {
+            return res.status(404).json({ message: "No blogs found" });
+        }
+        res.status(200).json(blogs);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching blogs" });
+    }
+};
+
+// Controller function to fetch a single blog by ID
 const fetchBlog = async (req, res) => {
     try {
         const blogId = req.params.id;
         const blog = await Blog.findById(blogId);
-        
         if (!blog) {
             return res.status(404).json({ message: "Blog not found" });
         }
-
         res.json(blog);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ message: "Error fetching blog" });
     }
 };
 
-module.exports = {home, register, login, users,sendOtp, addBlog, Blogs, fetchBlog,upload};
+// Export the controller functions along with the multer upload middleware
+module.exports = { home, register, login, users, sendOtp, addBlog, Blogs, fetchBlog, upload };
