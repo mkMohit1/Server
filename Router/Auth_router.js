@@ -8,7 +8,6 @@ router.route('/login').post(login);
 router.route('/register').post(register);
 router.route('/users').get(users);
 router.route('/send-otp').post(sendOtp);
-// router.route('/admin-panel').post();
 router.route('/BlogPost').post(addBlog);
 router.route('/blogs').get(Blogs);
 router.route('/blog/:id').get(fetchBlog);

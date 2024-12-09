@@ -46,7 +46,6 @@ const login = async (req,res) => {
 }
 
 
-
 const users = async (req, res) => {
     try {
         const Users = await User.find();
