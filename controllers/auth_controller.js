@@ -1,7 +1,20 @@
 // home
-
+const multer = require('multer');
 const User = require("../models/user-model");
 const Blog = require("../models/blog-model");
+
+// Set up multer to store uploaded files (coverImage in this case)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/'); // Destination folder for uploaded files
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + '-' + file.originalname); // File name format
+    }
+});
+
+const upload = multer({ storage: storage });
+
 
 const home = async(req,res)=>{
     try {
@@ -84,20 +97,23 @@ const sendOtp = async(req,res)=>{
     }
 }
 
-const addBlog = async(req,res)=>{
-    console.log("Register Request Body:", req.body);
-    try {
-        if(req.body){
-            const newBlog = new Blog(req.body);
-            await newBlog.save();
-             // Send success response after user is successfully created
-            res.status(201).json({ message: "new Blog successfully added" });
-        }
-    } catch (error) {
-         // Catch any errors and send an error response
-         res.status(500).json({ message: `Internal Server Error: ${error}`});
+ // Controller function to add a blog
+const addBlog = async (req, res) => {
+  try {
+    if (req.file) {
+      req.body.coverImage = req.file.path; // Store file path
+    } else {
+      req.body.coverImage = 'default-image-url'; // Default URL if no image
     }
-} 
+
+    const newBlog = new Blog(req.body);
+    await newBlog.save();
+
+    res.status(201).json({ message: 'New blog successfully added', blog: newBlog });
+  } catch (error) {
+    res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
 
 const Blogs = async(req,res)=>{
     try {
@@ -133,4 +149,4 @@ const fetchBlog = async (req, res) => {
     }
 };
 
-module.exports = {home, register, login, users,sendOtp, addBlog, Blogs, fetchBlog};
+module.exports = {home, register, login, users,sendOtp, addBlog, Blogs, fetchBlog,upload};
