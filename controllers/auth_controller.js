@@ -101,7 +101,7 @@ const addBlog = async (req, res) => {
 // Controller function to fetch all blogs
 const Blogs = async (req, res) => {
     try {
-        const blogs = await Blog.find();
+        const blogs = await Blog.find().sort({ date: -1 });
         if (blogs.length === 0) {
             return res.status(404).json({ message: "No blogs found" });
         }
@@ -125,5 +125,26 @@ const fetchBlog = async (req, res) => {
     }
 };
 
+const searchBlogs = async (req, res) => {
+    try {
+        const { query } = req.query; // Extract the query parameter
+        if (!query) {
+            return res.status(400).json({ message: "Search query is required" });
+        }
+
+        const searchRegex = new RegExp(query, 'i'); // Case-insensitive search
+        const blogs = await Blog.find({
+            $or: [
+                { title: searchRegex },
+                { content: searchRegex } // Check if the content contains the query
+            ]
+        }).sort({ date: -1 }); // Sort by latest date
+
+        res.status(200).json(blogs);
+    } catch (error) {
+        res.status(500).json({ message: "Error searching blogs", error: error.message });
+    }
+};
+
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, users, sendOtp, addBlog, Blogs, fetchBlog, upload };
+module.exports = { home, register, login, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs };
