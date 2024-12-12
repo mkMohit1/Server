@@ -72,7 +72,7 @@ const users = async (req, res) => {
 const singleUser = async (req, res) => {
     try {
         console.log(req.params);
-        const user = await User.find({mobileNumber: req.params.id});
+        const user = await User.findOne({mobileNumber: req.params.id});
         if (user.length === 0) {
             return res.status(404).json({ message: "No users found" });
         }
@@ -97,11 +97,12 @@ const sendOtp = async (req, res) => {
 // Controller function to add a new blog
 const addBlog = async (req, res) => {
     try {
-        if (req.file) {
-            req.body.coverImage = req.file.path; // Store file path
-        } else {
-            req.body.coverImage = 'default-image-url'; // Provide a default image if no file
-        }
+        console.log(req.body);
+        // if (req.file) {
+        //     req.body.coverImage = req.file.path; // Store file path
+        // } else {
+        //     req.body.coverImage = 'default-image-url'; // Provide a default image if no file
+        // }
 
         const newBlog = new Blog(req.body);
         await newBlog.save();
