@@ -71,6 +71,8 @@ const users = async (req, res) => {
 // Controller function to get perticular user
 const singleUser = async (req, res) => {
     try {
+        console.log(req.body);
+        console.log(req.params);
         const {mobileNumber} = req.body;
         const user = await User.find({mobileNumber});
         if (user.length === 0) {
