@@ -68,6 +68,19 @@ const users = async (req, res) => {
     }
 };
 
+// Controller function to get perticular user
+const singleUser = async (req, res) => {
+    try {
+        const {mobileNumber} = req.body;
+        const user = await User.find({mobileNumber});
+        if (user.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching users" });
+    }
+};
 // Controller function to send OTP
 const sendOtp = async (req, res) => {
     try {
@@ -189,4 +202,4 @@ const addContact = async (req, res) => {
   };
 
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact };
+module.exports = { home, register, login, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact, singleUser };
