@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contact" }], // Array of Contact IDs
 });
 
 const User = mongoose.model("User", userSchema);
