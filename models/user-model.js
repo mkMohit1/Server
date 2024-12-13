@@ -13,6 +13,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  name:{
+    type: String,
+    default: "User"
+  },
+  userImage:{
+    type: String,
+    default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
+ },
   contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contact" }], // Array of Contact IDs
 });
 

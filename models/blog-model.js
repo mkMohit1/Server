@@ -23,7 +23,7 @@ const blogSchema = new mongoose.Schema({
    },
    isOnCoverTop:{
       type: String,
-      required: true,
+      default: false,
    },
    category:{
     type: String,
@@ -39,7 +39,7 @@ const blogSchema = new mongoose.Schema({
  },
  author: {
     type: String,
-    default: "Admin"
+    required: true
  },
 });
 

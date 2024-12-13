@@ -98,12 +98,6 @@ const sendOtp = async (req, res) => {
 const addBlog = async (req, res) => {
     try {
         console.log(req.body);
-        // if (req.file) {
-        //     req.body.coverImage = req.file.path; // Store file path
-        // } else {
-        //     req.body.coverImage = 'default-image-url'; // Provide a default image if no file
-        // }
-
         const newBlog = new Blog(req.body);
         await newBlog.save();
         res.status(201).json({ message: 'New blog successfully added', blog: newBlog });
