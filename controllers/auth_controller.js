@@ -157,10 +157,10 @@ const searchBlogs = async (req, res) => {
 // controller function to add the contact
 const addContact = async (req, res) => {
     try {
-      const { mobileNumber, email, message, Name } = req.body;
+      const { mobile, email, message, Name } = req.body;
         console.log(req.body);
       // Find the user by ID
-      const contactAddInUser = await User.findOne({mobileNumber});
+      const contactAddInUser = await User.findOne({mobileNumber:mobile});
         
       if (!contactAddInUser) {
         return res.status(404).json({ success: false, message: "User not found." });
