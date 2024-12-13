@@ -72,7 +72,7 @@ const users = async (req, res) => {
 const singleUser = async (req, res) => {
     try {
         console.log(req.params);
-        const user = await User.findOne({mobileNumber: req.params.id});
+        const user = await User.findOne({mobileNumber: req.params.mobile});
         if (user.length === 0) {
             return res.status(404).json({ message: "No users found" });
         }
