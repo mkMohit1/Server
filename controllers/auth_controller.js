@@ -2,6 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const User = require("../models/user-model");
 const Blog = require("../models/blog-model");
+const Contact = require('../models/contact-model');
 
 // Define storage configuration for multer
 const storage = multer.diskStorage({
@@ -157,11 +158,12 @@ const searchBlogs = async (req, res) => {
 // controller function to add the contact
 const addContact = async (req, res) => {
     try {
-      const { mobile, email, message, Name } = req.body;
+        console.log(req.body);
+      const { mobile, email, message, name } = req.body;
         console.log(req.body);
       // Find the user by ID
       const contactAddInUser = await User.findOne({mobileNumber:mobile});
-        
+        console.log(contactAddInUser);
       if (!contactAddInUser) {
         return res.status(404).json({ success: false, message: "User not found." });
       }
@@ -170,7 +172,7 @@ const addContact = async (req, res) => {
       const newContact = new Contact({
         email,
         message,
-        name: Name, // Make sure the property matches
+        Name:name, // Make sure the property matches
       });
   
       // Save the contact
