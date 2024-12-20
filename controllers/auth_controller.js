@@ -4,6 +4,7 @@ const User = require("../models/user-model");
 const Blog = require("../models/blog-model");
 const Contact = require('../models/contact-model');
 const axios = require('axios');
+const fs = require('fs');
 
 // Define storage configuration for multer
 const storage = multer.diskStorage({
@@ -87,7 +88,7 @@ const singleUser = async (req, res) => {
 const sendOtp = async (req, res) => {
     try {
         const { mobileNumber, otp, type } = req.body;
-
+        console.log(req.body);
         // Validation: Check if mobileNumber and otp are provided
         if (!mobileNumber || !otp || !type) {
             return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
