@@ -5,6 +5,7 @@ const Blog = require("../models/blog-model");
 const Contact = require('../models/contact-model');
 const axios = require('axios');
 const fs = require('fs');
+const FormData = require('form-data');
 
 // Define storage configuration for multer
 const storage = multer.diskStorage({
