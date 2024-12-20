@@ -3,6 +3,7 @@ const path = require('path');
 const User = require("../models/user-model");
 const Blog = require("../models/blog-model");
 const Contact = require('../models/contact-model');
+const axios = require('axios');
 
 // Define storage configuration for multer
 const storage = multer.diskStorage({
@@ -85,13 +86,87 @@ const singleUser = async (req, res) => {
 // Controller function to send OTP
 const sendOtp = async (req, res) => {
     try {
-        const { mobileNumber, otp } = req.body;
+        const { mobileNumber, otp, type } = req.body;
+
+        // Validation: Check if mobileNumber and otp are provided
+        if (!mobileNumber || !otp || !type) {
+            return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
+        }
+
+        // Find user by mobileNumber
         const user = await User.findOne({ mobileNumber });
-        if (user) {
-            res.status(200).json({ mobileNumber, otp });
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (type === 'whatsapp') { // WhatsApp OTP
+            const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
+
+            const formData = new FormData();
+            formData.append("to", formattedNumber);
+            formData.append("type", "mediatemplate");
+            formData.append("template_name", "logincode");
+            formData.append("channel", "whatsapp");
+            formData.append("from", "+919810866265"); // Replace with your WhatsApp number
+            formData.append("params", otp);
+            const imagePath = path.join(__dirname, "/4.jpeg");
+            formData.append("media", fs.createReadStream(imagePath));
+
+            try {
+                const response = await axios.post(
+                    "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
+                    formData,
+                    {
+                        headers: {
+                            ...formData.getHeaders(),
+                            "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
+                        },
+                    }
+                );
+                res.status(200).json({
+                    message: "WhatsApp OTP sent successfully",
+                    data: response.data,
+                    otp: otp,
+                });
+            } catch (error) {
+                console.error("Error sending WhatsApp message: ", error);
+                res.status(500).json({
+                    message: "Failed to send WhatsApp OTP",
+                    error: error.response ? error.response.data : error.message,
+                });
+            }
+
+        } else if (type === 'voice') { // Voice OTP
+            try {
+                const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
+                    params: {
+                        api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
+                        method: "dial.click2call",
+                        caller: mobileNumber,
+                        receiver: "ivr:250142",  // Example IVR receiver number
+                        format: "json",
+                        meta: JSON.stringify({ OTP: otp }),
+                    },
+                });
+                res.status(200).json({
+                    message: "Voice OTP sent successfully",
+                    data: response.data,
+                    otp: otp,
+                });
+            } catch (error) {
+                console.error("Error sending Voice OTP: ", error);
+                res.status(500).json({
+                    message: "Failed to send Voice OTP",
+                    error: error.response ? error.response.data : error.message,
+                });
+            }
+        } else {
+            // If type is neither 'whatsapp' nor 'VoiceCall'
+            return res.status(400).json({ message: "Invalid OTP type. Must be either 'whatsapp' or 'VoiceCall'." });
         }
     } catch (error) {
-        res.status(500).json({ message: "Error sending OTP" });
+        console.error("Error sending OTP: ", error);
+        res.status(500).json({ message: "Error sending OTP", error: error.message });
     }
 };
 
