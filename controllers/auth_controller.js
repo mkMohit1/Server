@@ -68,31 +68,7 @@ const fetchAdmin = async (req, res) => {
     try {
         const { mobileNumber } = req.body;
         console.log(req.body);
-        const mobile = "8860721857";
-        const fetchedUserAdmin = await supperAdmin.findOne({ mobileNumber });
-        console.log(fetchedUserAdmin);
-        if(!fetchedUserAdmin){
-            if(mobileNumber !== mobile) return res.status(404).json({ message: "User not found" });
-            else{
-                console.log("Admin not found");
-                const newUser = new supperAdmin({ mobileNumber:mobile,otp:"1234" });
-                await newUser.save();
-                res.status(200).json({ message: "User registered successfully" });
-            }           
-        }
-        const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
-        const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber});
-        if (fetchedUserAdmin) {
-            res.status(200).json(fetchedUserAdmin);
-        }
-        else if (fetchedUserSaleAdmin) {
-            res.status(200).json(fetchedUserSaleAdmin);
-        }
-        else if (fetchedUserProductAdmin) {
-            res.status(200).json(fetchedUserProductAdmin);
-        }   else {
-            res.status(404).json({ message: "User not found" });
-        }
+        
     } catch (error) {
         res.status(400).json("Internal Server Error");
     }
@@ -134,13 +110,31 @@ const sendOtp = async (req, res) => {
         if (!mobileNumber || !otp || !type) {
             return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
         }
-
-        // Find user by mobileNumber
-        const user = await User.findOne({ mobileNumber });
-        if (!user) {
-            return res.status(404).json({ message: "User not found." });
+        const mobile = "8860721857";
+        const fetchedUserAdmin = await supperAdmin.findOne({ mobileNumber });
+        console.log(fetchedUserAdmin);
+        if(!fetchedUserAdmin){
+            if(mobileNumber !== mobile) return res.status(404).json({ message: "User not found" });
+            else{
+                console.log("Admin not found");
+                const newUser = new supperAdmin({ mobileNumber:mobile,otp:"1234" });
+                await newUser.save();
+                res.status(200).json({ message: "User registered successfully" });
+            }           
         }
-
+        const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
+        const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber});
+        if (fetchedUserAdmin) {
+            res.status(200).json(fetchedUserAdmin);
+        }
+        else if (fetchedUserSaleAdmin) {
+            res.status(200).json(fetchedUserSaleAdmin);
+        }
+        else if (fetchedUserProductAdmin) {
+            res.status(200).json(fetchedUserProductAdmin);
+        }   else {
+            res.status(404).json({ message: "User not found" });
+        }
         if (type === 'whatsapp') { // WhatsApp OTP
             const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
 
