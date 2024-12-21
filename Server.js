@@ -18,10 +18,9 @@ app.use((req, res) => {
 // Start the server
 const PORT = 5000;
 connectDb().then(async(db) => {
-    const collections = await db.listCollections({name: 'Cadabra'}).toArray();
+    const collections = await db.listCollections({name: 'Users'}).toArray();
     if(collections.length === 0) {
-        console.log("Creating collection Cadabra and Users");
-        db.createCollection('Cadabra');
+        console.log("Creating collection Users");
         db.createCollection('Users');
     }else{
         console.log("Collection Cadabra and Users already exists");
