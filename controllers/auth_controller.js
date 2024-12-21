@@ -343,4 +343,4 @@ const addContact = async (req, res) => {
   };
 
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, fetchAdmin, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact, singleUser };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact, singleUser, addAdmin };
