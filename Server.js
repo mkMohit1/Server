@@ -7,6 +7,14 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
+//create a collection of Cadabra
+const checkCadabra=connectDb().listCollections({name: 'Cadabra'}).next();
+if(checkCadabra){
+    console.log("Collection already exists");
+}else{
+    connectDb().createCollection('Cadabra');
+    console.log("Collection created");
+}
 // Middleware for routing
 app.use("/", authRouter);
 
