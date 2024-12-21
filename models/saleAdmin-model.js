@@ -9,9 +9,9 @@ const saleAdminSchema = new mongoose.Schema({
         type: String,
         default: "SaleAdmin"
       },
-      otp: {
+      email: {
         type: String,
-        required: false,
+        required: true,
       },
       name:{
         type: String,

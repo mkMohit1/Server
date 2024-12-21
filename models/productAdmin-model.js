@@ -9,9 +9,9 @@ const productAdminSchema = new mongoose.Schema({
         type: String,
         default: "ProductAdmin"
       },
-      otp: {
-        type: String,
-        required: false,
+      email: {
+        type: string,
+        required: ture,
       },
       name:{
         type: String,

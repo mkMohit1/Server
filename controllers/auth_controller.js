@@ -63,7 +63,6 @@ const login = async (req, res) => {
 };
 
 // fetchAdmin controller function
-
 const fetchAdmin = async (req, res) => {
     try {
         const { mobileNumber } = req.body;
@@ -74,6 +73,40 @@ const fetchAdmin = async (req, res) => {
     }
 };
 
+// addAdmin controller function
+const addAdmin = async (req, res) => {
+    try {
+        console.log(req.body);
+        const { mobileNumber, name,email, type, supperAdminID } = req.body;
+        const supperAdmin = await supperAdmin.findOne({ _id:supperAdminID });
+        if(type ==='SaleAdmin'){
+        const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
+            if(fetchedUserSaleAdmin){
+                return res.status(400).json("User already exists"); 
+            }
+           const newUser = new saleAdmin({ mobileNumber, name,email, type });
+              await newUser.save();
+                //add admin to sale collection
+                spoonAdmin.saleAdmin.push(newUser._id);
+                res.status(201).json({ message: "User registered successfully" });
+        }
+        else if(type ==='ProductAdmin'){
+            const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber});
+            if(fetchedUserProductAdmin){
+                return res.status(400).json("User already exists"); 
+            }
+            const newUser = new productAdmin({ mobileNumber, name,email, type });
+            await newUser.save();
+            //add admin to product collection
+            spoonAdmin.productAdmin.push(newUser._id);
+            await supperAdmin.save();
+            res.status(201).json({ message: "User registered successfully" });
+        }
+
+    } catch (error) {
+        res.status(400).json("Internal Server Error");
+    }
+}
 
 // Controller function to get users
 const users = async (req, res) => {
