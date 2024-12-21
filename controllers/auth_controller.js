@@ -1,6 +1,9 @@
 const multer = require('multer');
 const path = require('path');
 const User = require("../models/commonUser-model");
+const supperAdmin = require("../models/supperAdmin-model");
+const saleAdmin = require("../models/saleAdmin-model");
+const productAdmin = require("../models/productAdmin-model");
 const Blog = require("../models/blog-model");
 const Contact = require('../models/contact-model');
 const axios = require('axios');
@@ -58,6 +61,43 @@ const login = async (req, res) => {
         res.status(400).json("Internal Server Error");
     }
 };
+
+// fetchAdmin controller function
+
+const fetchAdmin = async (req, res) => {
+    try {
+        const { mobileNumber } = req.body;
+        console.log(req.body);
+        const mobile = "8860721857";
+        const fetchedUserAdmin = await supperAdmin.findOne({ mobileNumber });
+        console.log(fetchedUserAdmin);
+        if(!fetchedUserAdmin){
+            if(mobileNumber !== mobile) return res.status(404).json({ message: "User not found" });
+            else{
+                console.log("Admin not found");
+                const newUser = new supperAdmin({ mobileNumber:mobile,otp:"1234" });
+                await newUser.save();
+                res.status(200).json({ message: "User registered successfully" });
+            }           
+        }
+        const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
+        const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber});
+        if (fetchedUserAdmin) {
+            res.status(200).json(fetchedUserAdmin);
+        }
+        else if (fetchedUserSaleAdmin) {
+            res.status(200).json(fetchedUserSaleAdmin);
+        }
+        else if (fetchedUserProductAdmin) {
+            res.status(200).json(fetchedUserProductAdmin);
+        }   else {
+            res.status(404).json({ message: "User not found" });
+        }
+    } catch (error) {
+        res.status(400).json("Internal Server Error");
+    }
+};
+
 
 // Controller function to get users
 const users = async (req, res) => {
@@ -276,4 +316,4 @@ const addContact = async (req, res) => {
   };
 
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact, singleUser };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact, singleUser };
