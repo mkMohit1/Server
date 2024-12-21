@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
+const commonUserSchema = new mongoose.Schema({
   mobileNumber: {
     type: String,
     required: true, 
   },
-  isAdmin: {
-    type: Boolean,
-    default: false,
+  type:{
+    type: String,
+    default: "commonUser"
   },
   otp: {
     type: String,
@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema({
   contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contact" }], // Array of Contact IDs
 });
 
-const User = mongoose.model("User", userSchema);
+// let add commonUserSchema to the User collection database
+const User = mongoose.model("commonUsers", commonUserSchema, "Users");
 
 module.exports = User;

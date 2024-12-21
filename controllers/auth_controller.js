@@ -1,6 +1,6 @@
 const multer = require('multer');
 const path = require('path');
-const User = require("../models/user-model");
+const User = require("../models/commonUser-model");
 const Blog = require("../models/blog-model");
 const Contact = require('../models/contact-model');
 const axios = require('axios');

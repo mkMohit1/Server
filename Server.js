@@ -20,10 +20,11 @@ const PORT = 5000;
 connectDb().then(async(db) => {
     const collections = await db.listCollections({name: 'Cadabra'}).toArray();
     if(collections.length === 0) {
-        console.log("Creating collection");
+        console.log("Creating collection Cadabra and Users");
         db.createCollection('Cadabra');
+        db.createCollection('Users');
     }else{
-        console.log("Collection Cadabra already exists");
+        console.log("Collection Cadabra and Users already exists");
     }
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
