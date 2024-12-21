@@ -7,14 +7,6 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
-//create a collection of Cadabra
-const checkCadabra=connectDb().listCollections({name: 'Cadabra'}).next();
-if(checkCadabra){
-    console.log("Collection already exists");
-}else{
-    connectDb().createCollection('Cadabra');
-    console.log("Collection created");
-}
 // Middleware for routing
 app.use("/", authRouter);
 
@@ -25,8 +17,17 @@ app.use((req, res) => {
 
 // Start the server
 const PORT = 5000;
-connectDb().then(() => {
+connectDb().then(async(db) => {
+    const collections = await db.listCollections({name: 'Cadabra'}).toArray();
+    if(collections.length === 0) {
+        console.log("Creating collection");
+        db.createCollection('Cadabra');
+    }else{
+        console.log("Collection Cadabra already exists");
+    }
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
+}).catch((err) => {
+    console.log("Error connecting to database", err);
 });
