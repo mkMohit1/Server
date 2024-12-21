@@ -11,7 +11,7 @@ const productAdminSchema = new mongoose.Schema({
       },
       email: {
         type: String,
-        required: ture,
+        required: true,
       },
       name:{
         type: String,
