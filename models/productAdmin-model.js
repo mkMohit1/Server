@@ -10,7 +10,7 @@ const productAdminSchema = new mongoose.Schema({
         default: "ProductAdmin"
       },
       email: {
-        type: string,
+        type: String,
         required: ture,
       },
       name:{
