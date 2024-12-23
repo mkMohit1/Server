@@ -52,15 +52,20 @@ const fetchAdmin = async (req, res) => {
 		const admin = await SupperAdmin.findOne({ mobileNumber }) 
             || await SaleAdmin.findOne({ mobileNumber }) 
             || await ProductAdmin.findOne({ mobileNumber: mobileNumber });
-
+        console.log(admin);
         if (!admin) {
             return res.status(400).json({ message: "MobileNumber are required" });
         }
-        if(admin.isAdmin === 'SupperAdmin'){
-			const populatedAdmin  = await admin.populate('saleAdmin').populate('productAdmin');
-			const allAdminData = [...populatedAdmin.saleAdmin||[],...populatedAdmin||[]] ;
-			return res.status(200).json(allAdminData);
-		}
+        if(admin.type === 'SupperAdmin'){
+			const populatedAdmin = await SupperAdmin.findById(admin._id).populate('saleAdmin').populate('productAdmin');
+            const allAdminData = [
+                ...(populatedAdmin.saleAdmin || []),
+                populatedAdmin,
+                ...(populatedAdmin.productAdmin || [])
+            ];
+
+            return res.status(200).json(allAdminData);
+        }
         return res.status(400).json({ message: "Invalid admin type" });
 
     } catch (error) {
