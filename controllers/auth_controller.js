@@ -163,7 +163,7 @@ const sendOtp = async (req, res) => {
         }
 
         const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
-        const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber });
+        const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber });
 
         if (fetchedUserAdmin) {
             return res.status(200).json(fetchedUserAdmin);  // Return here to stop further execution
