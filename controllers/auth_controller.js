@@ -139,35 +139,40 @@ const sendOtp = async (req, res) => {
     try {
         const { mobileNumber, otp, type } = req.body;
         console.log(req.body);
+
         // Validation: Check if mobileNumber and otp are provided
         if (!mobileNumber || !otp || !type) {
             return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
         }
+
         const mobile = "8860721857";
         const fetchedUserAdmin = await supperAdmin.findOne({ mobileNumber });
         console.log(fetchedUserAdmin);
-        if(!fetchedUserAdmin){
-            if(mobileNumber !== mobile) return res.status(404).json({ message: "User not found" });
-            else{
+        
+        if (!fetchedUserAdmin) {
+            if (mobileNumber !== mobile) {
+                return res.status(404).json({ message: "User not found" });
+            } else {
                 console.log("Admin not found");
-                const newUser = new supperAdmin({ mobileNumber:mobile,otp:"1234" });
+                const newUser = new supperAdmin({ mobileNumber: mobile, otp: "1234" });
                 await newUser.save();
-                res.status(200).json({ message: "User registered successfully" });
-            }           
+                return res.status(200).json({ message: "User registered successfully" });
+            }
         }
+
         const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
-        const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber});
+        const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber });
+
         if (fetchedUserAdmin) {
-            res.status(200).json(fetchedUserAdmin);
+            return res.status(200).json(fetchedUserAdmin);  // Return here to stop further execution
+        } else if (fetchedUserSaleAdmin) {
+            return res.status(200).json(fetchedUserSaleAdmin);  // Return here to stop further execution
+        } else if (fetchedUserProductAdmin) {
+            return res.status(200).json(fetchedUserProductAdmin);  // Return here to stop further execution
+        } else {
+            return res.status(404).json({ message: "User not found" });  // Return here to stop further execution
         }
-        else if (fetchedUserSaleAdmin) {
-            res.status(200).json(fetchedUserSaleAdmin);
-        }
-        else if (fetchedUserProductAdmin) {
-            res.status(200).json(fetchedUserProductAdmin);
-        }   else {
-            res.status(404).json({ message: "User not found" });
-        }
+
         if (type === 'whatsapp') { // WhatsApp OTP
             const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
 
@@ -192,19 +197,18 @@ const sendOtp = async (req, res) => {
                         },
                     }
                 );
-                res.status(200).json({
+                return res.status(200).json({
                     message: "WhatsApp OTP sent successfully",
                     data: response.data,
                     otp: otp,
                 });
             } catch (error) {
                 console.error("Error sending WhatsApp message: ", error);
-                res.status(500).json({
+                return res.status(500).json({
                     message: "Failed to send WhatsApp OTP",
                     error: error.response ? error.response.data : error.message,
                 });
             }
-
         } else if (type === 'voice') { // Voice OTP
             try {
                 const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
@@ -217,14 +221,14 @@ const sendOtp = async (req, res) => {
                         meta: JSON.stringify({ OTP: otp }),
                     },
                 });
-                res.status(200).json({
+                return res.status(200).json({
                     message: "Voice OTP sent successfully",
                     data: response.data,
                     otp: otp,
                 });
             } catch (error) {
                 console.error("Error sending Voice OTP: ", error);
-                res.status(500).json({
+                return res.status(500).json({
                     message: "Failed to send Voice OTP",
                     error: error.response ? error.response.data : error.message,
                 });
@@ -235,7 +239,7 @@ const sendOtp = async (req, res) => {
         }
     } catch (error) {
         console.error("Error sending OTP: ", error);
-        res.status(500).json({ message: "Error sending OTP", error: error.message });
+        return res.status(500).json({ message: "Error sending OTP", error: error.message });
     }
 };
 
