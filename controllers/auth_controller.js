@@ -47,13 +47,14 @@ const login = async (req, res) => {
 // fetchAdmin controller function
 const fetchAdmin = async (req, res) => {
     try {
-        const { mobileNumber } = req.query;
+        const { mobileNumber } = req.params;
+        console.log(req.params);
 		const admin = await SupperAdmin.findOne({ mobileNumber }) 
             || await SaleAdmin.findOne({ mobileNumber }) 
             || await ProductAdmin.findOne({ mobileNumber: mobileNumber });
 
         if (!admin) {
-            return res.status(400).json({ message: "userID and isAdmin are required" });
+            return res.status(400).json({ message: "MobileNumber are required" });
         }
         if(admin.isAdmin === 'SupperAdmin'){
 			const populatedAdmin  = await admin.populate('saleAdmin').populate('productAdmin');

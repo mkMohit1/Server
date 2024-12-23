@@ -17,7 +17,7 @@ router.route('/blog/:id').get(fetchBlog);
 router.route('/blogs/search').get(searchBlogs); // Add route for search functionality
 router.route('/contact').post(addContact);
 router.route('/admin/addAdmin').post(addAdmin);
-router.route('/admin/getAdmins/:mobileNumbers').get(fetchAdmin);
+router.route('/admin/getAdmins/:mobileNumber').get(fetchAdmin);
 
 
 module.exports = router;
