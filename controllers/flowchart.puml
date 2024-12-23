@@ -17,13 +17,51 @@ Cadabra --> dashboard
 
 @startuml
 start
-:User opens B Cadabra application;
-:User attempts to log in after clicking on the login button;
+:login/admin-login;
 
-if (User logs in?) then (yes)
-  :Go to dashboard project;
-else (no)
+if (Admin logs in?) then (yes)
+  :Go to admin dashboard project;
+else if(User logs in?) then (yes)
+    :Go to user home page with signout option;
+else
   :show B Cadabra Home page without login;
 endif
+stop
+@enduml
+
+'-------------------- New Page --------------------
+@startuml
+
+start
+:Admin Login;
+if (SuperAdmin logs in?) then (yes)
+  :Go to admin dashboard project with all access;
+  if (SuperAdmin) then (yes)
+    :show default dashboard with all access;
+  else
+    if (SaleAdmin) then (yes)
+      :show dashboard with limited access for SaleAdmin;
+      if (SaleManager) then (yes)
+        :show dashboard with limited access for SaleManager;
+      else
+        :login again;
+      endif
+    else
+      if (ProductAdmin) then (yes)
+        :show dashboard with limited access for ProductAdmin;
+        if (Product) then (yes)
+          :show product dashboard;
+        else
+          :login again;
+        endif
+      else
+        :login again;
+      endif
+    endif
+  endif
+else
+  :show B Cadabra Home page without login;
+endif
+
 stop
 @enduml
