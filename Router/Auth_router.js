@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { home, login, register, users, fetchAdmin, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs, addContact,singleUser, addAdmin } = require('../controllers/auth_controller');
+const {home, login, register, users, singleUser, sendOtp, addAdmin, fetchAdmin} = require('../controllers/auth_controller');
+const {addBlog, Blogs, fetchBlog, searchBlogs} = require('../controllers/blog_controller');
+const {addContact} = require('../controllers/contact_controller');
 
 // Define the routes
 router.route('/').get(home);
@@ -14,8 +16,8 @@ router.route('/blogs').get(Blogs);
 router.route('/blog/:id').get(fetchBlog);
 router.route('/blogs/search').get(searchBlogs); // Add route for search functionality
 router.route('/contact').post(addContact);
-router.route('/admin').post(fetchAdmin);
 router.route('/admin/addAdmin').post(addAdmin);
+router.route('/admin/getAdmins/:mobileNumbers').get(fetchAdmin);
 
 
 module.exports = router;

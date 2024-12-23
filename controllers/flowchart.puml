@@ -1,0 +1,29 @@
+@startuml
+top to bottom direction
+skinparam packageStyle rect
+
+actor Cadabra
+actor Bolod
+actor SaleBean
+actor dashboard
+
+Cadabra --> Bolod
+Cadabra --> SaleBean
+Cadabra --> dashboard
+
+@enduml
+
+'-------------------- New Page --------------------
+
+@startuml
+start
+:User opens B Cadabra application;
+:User attempts to log in after clicking on the login button;
+
+if (User logs in?) then (yes)
+  :Go to dashboard project;
+else (no)
+  :show B Cadabra Home page without login;
+endif
+stop
+@enduml

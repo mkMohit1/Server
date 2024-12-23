@@ -1,28 +1,10 @@
-const multer = require('multer');
-const path = require('path');
 const User = require("../models/commonUser-model");
-const supperAdmin = require("../models/supperAdmin-model");
-const saleAdmin = require("../models/saleAdmin-model");
+const SupperAdmin = require("../models/supperAdmin-model");
+const SaleAdmin = require("../models/saleAdmin-model");
 const productAdmin = require("../models/productAdmin-model");
-const Blog = require("../models/blog-model");
-const Contact = require('../models/contact-model');
-const axios = require('axios');
-const fs = require('fs');
+const path = require('path');
 const FormData = require('form-data');
-
-// Define storage configuration for multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads/'));  // Use absolute path
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));  // Add unique file name
-    }
-});
-
-// Initialize multer upload
-const upload = multer({ storage: storage });
+const fs = require('fs');
 
 // Controller function to handle home route
 const home = async (req, res) => {
@@ -65,11 +47,24 @@ const login = async (req, res) => {
 // fetchAdmin controller function
 const fetchAdmin = async (req, res) => {
     try {
-        const { mobileNumber } = req.body;
-        console.log(req.body);
-        
+        const { mobileNumber } = req.query;
+		const admin = await SupperAdmin.findOne({ mobileNumber }) 
+            || await SaleAdmin.findOne({ mobileNumber }) 
+            || await ProductAdmin.findOne({ mobileNumber: mobileNumber });
+
+        if (!admin) {
+            return res.status(400).json({ message: "userID and isAdmin are required" });
+        }
+        if(admin.isAdmin === 'SupperAdmin'){
+			const populatedAdmin  = await admin.populate('saleAdmin').populate('productAdmin');
+			const allAdminData = [...populatedAdmin.saleAdmin||[],...populatedAdmin||[]] ;
+			return res.status(200).json(allAdminData);
+		}
+        return res.status(400).json({ message: "Invalid admin type" });
+
     } catch (error) {
-        res.status(400).json("Internal Server Error");
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -77,28 +72,33 @@ const fetchAdmin = async (req, res) => {
 const addAdmin = async (req, res) => {
     try {
         console.log(req.body);
-        const { mobileNumber, name,email, type, supperAdminID } = req.body;
-        const supperAdmin = await supperAdmin.findOne({ _id:supperAdminID });
+        const { phone, name,email, type, supperAdminID } = req.body;
+        const supperAdmin = await SupperAdmin.findOne({ _id:supperAdminID });
+        console.log(supperAdmin);
         if(type ==='SaleAdmin'){
-        const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
+            console.log("mk");
+        const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber:phone });
             if(fetchedUserSaleAdmin){
                 return res.status(400).json("User already exists"); 
             }
-           const newUser = new saleAdmin({ mobileNumber, name,email, type });
+            console.log("Sale Admin not found and adding new Sale Admin");
+            const newUser = new SaleAdmin({ mobileNumber:phone, name,email, type });
               await newUser.save();
+              console.log(newUser);
                 //add admin to sale collection
-                spoonAdmin.saleAdmin.push(newUser._id);
+                supperAdmin.saleAdmin.push(newUser._id);
+				await supperAdmin.save();
                 res.status(201).json({ message: "User registered successfully" });
         }
         else if(type ==='ProductAdmin'){
-            const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber});
+            const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber: phone });
             if(fetchedUserProductAdmin){
                 return res.status(400).json("User already exists"); 
             }
-            const newUser = new productAdmin({ mobileNumber, name,email, type });
+            const newUser = new ProductAdmin({ mobileNumber: phone, name,email, type });
             await newUser.save();
             //add admin to product collection
-            spoonAdmin.productAdmin.push(newUser._id);
+            supperAdmin.productAdmin.push(newUser._id);
             await supperAdmin.save();
             res.status(201).json({ message: "User registered successfully" });
         }
@@ -106,7 +106,7 @@ const addAdmin = async (req, res) => {
     } catch (error) {
         res.status(400).json("Internal Server Error");
     }
-}
+}   
 
 // Controller function to get users
 const users = async (req, res) => {
@@ -134,6 +134,8 @@ const singleUser = async (req, res) => {
         res.status(500).json({ message: "Error fetching users" });
     }
 };
+
+
 // Controller function to send OTP
 const sendOtp = async (req, res) => {
     try {
@@ -144,9 +146,8 @@ const sendOtp = async (req, res) => {
         if (!mobileNumber || !otp || !type) {
             return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
         }
-
         const mobile = "8860721857";
-        const fetchedUserAdmin = await supperAdmin.findOne({ mobileNumber });
+        const fetchedUserAdmin = await SupperAdmin.findOne({ mobileNumber });
         console.log(fetchedUserAdmin);
         
         if (!fetchedUserAdmin) {
@@ -154,13 +155,13 @@ const sendOtp = async (req, res) => {
                 return res.status(404).json({ message: "User not found" });
             } else {
                 console.log("Admin not found");
-                const newUser = new supperAdmin({ mobileNumber: mobile, otp: "1234" });
+                const newUser = new SupperAdmin({ mobileNumber: mobile, otp: "1234" });
                 await newUser.save();
                 return res.status(200).json({ message: "User registered successfully" });
             }
         }
 
-        const fetchedUserSaleAdmin = await saleAdmin.findOne({ mobileNumber });
+        const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
         const fetchedUserProductAdmin = await productAdmin.findOne({ mobileNumber });
 
         if (fetchedUserAdmin) {
@@ -243,108 +244,5 @@ const sendOtp = async (req, res) => {
     }
 };
 
-// Controller function to add a new blog
-const addBlog = async (req, res) => {
-    try {
-        console.log(req.body);
-        const newBlog = new Blog(req.body);
-        await newBlog.save();
-        res.status(201).json({ message: 'New blog successfully added', blog: newBlog });
-    } catch (error) {
-        res.status(500).json({ message: `Internal Server Error: ${error.message}` });
-    }
-};
-
-// Controller function to fetch all blogs
-const Blogs = async (req, res) => {
-    try {
-        const blogs = await Blog.find().sort({ date: -1 });
-        if (blogs.length === 0) {
-            return res.status(404).json({ message: "No blogs found" });
-        }
-        res.status(200).json(blogs);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching blogs" });
-    }
-};
-
-// Controller function to fetch a single blog by ID
-const fetchBlog = async (req, res) => {
-    try {
-        const blogId = req.params.id;
-        const blog = await Blog.findById(blogId);
-        if (!blog) {
-            return res.status(404).json({ message: "Blog not found" });
-        }
-        res.json(blog);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching blog" });
-    }
-};
-
-const searchBlogs = async (req, res) => {
-    try {
-        const { query } = req.query; // Extract the query parameter
-        if (!query) {
-            return res.status(400).json({ message: "Search query is required" });
-        }
-
-        const searchRegex = new RegExp(query, 'i'); // Case-insensitive search
-        const blogs = await Blog.find({
-            $or: [
-                { title: searchRegex },
-                { content: searchRegex } // Check if the content contains the query
-            ]
-        }).sort({ date: -1 }); // Sort by latest date
-
-        res.status(200).json(blogs);
-    } catch (error) {
-        res.status(500).json({ message: "Error searching blogs", error: error.message });
-    }
-};
-
-// controller function to add the contact
-const addContact = async (req, res) => {
-    try {
-        console.log(req.body);
-      const { mobile, email, message, name } = req.body;
-        console.log(req.body);
-      // Find the user by ID
-      const contactAddInUser = await User.findOne({mobileNumber:mobile});
-        console.log(contactAddInUser);
-      if (!contactAddInUser) {
-        return res.status(404).json({ success: false, message: "User not found." });
-      }
-  
-      // Create a new contact
-      const newContact = new Contact({
-        email,
-        message,
-        Name:name, // Make sure the property matches
-      });
-  
-      // Save the contact
-      const savedContact = await newContact.save();
-  
-      // Add the contact ID to the user's contacts array
-      contactAddInUser.contacts.push(savedContact._id);
-  
-      // Save the updated user document
-      await contactAddInUser.save();
-  
-      res.status(201).json({
-        success: true,
-        message: "Contact added successfully.",
-        contact: savedContact,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "An error occurred.",
-        error: error.message,
-      });
-    }
-  };
-
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, fetchAdmin, users, sendOtp, addBlog, Blogs, fetchBlog, upload, searchBlogs,addContact, singleUser, addAdmin };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin };
