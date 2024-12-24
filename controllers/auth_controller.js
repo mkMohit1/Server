@@ -85,7 +85,7 @@ const fetchAdmin = async (req, res) => {
 const addAdmin = async (req, res) => {
     try {
         console.log(req.body);
-        const { phone, name,email, type, supperAdminID } = req.body;
+        const { mobileNumber, name,email, type, supperAdminID } = req.body;
         if(type ==='SaleAdmin' || type ==='ProductAdmin'){
             const supperAdmin = await SupperAdmin.findOne({ _id:supperAdminID });
         console.log(supperAdmin);
