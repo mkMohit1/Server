@@ -92,12 +92,12 @@ const addAdmin = async (req, res) => {
         if(supperAdmin){
             if(type ==='SaleAdmin'){
                 console.log("mk");
-            const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber:phone });
+            const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber:mobileNumber });
                 if(fetchedUserSaleAdmin){
                     return res.status(400).json("User already exists"); 
                 }
                 console.log("Sale Admin not found and adding new Sale Admin");
-                const newUser = new SaleAdmin({ mobileNumber:phone, name,email, type, SupperAdmin: supperAdmin._id });  
+                const newUser = new SaleAdmin({ mobileNumber:mobileNumber, name,email, type, SupperAdmin: supperAdmin._id });  
                 await newUser.save();
                 console.log(newUser);
                     //add admin to sale collection
@@ -106,11 +106,11 @@ const addAdmin = async (req, res) => {
                     res.status(201).json({ message: "User registered successfully" });
             }
             else if(type ==='ProductAdmin'){
-                const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber: phone });
+                const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber: mobileNumber });
                 if(fetchedUserProductAdmin){
                     return res.status(400).json("User already exists"); 
                 }
-                const newUser = new ProductAdmin({ mobileNumber: phone, name,email, type, SupperAdmin: supperAdmin._id });
+                const newUser = new ProductAdmin({ mobileNumber: mobileNumber, name,email, type, SupperAdmin: supperAdmin._id });
                 await newUser.save();
                 //add admin to product collection
                 supperAdmin.productAdmin.push(newUser._id);
@@ -124,13 +124,13 @@ const addAdmin = async (req, res) => {
             console.log(saleAdmin);
             if(saleAdmin){
                 // console.log("Sale Admin found");
-                const fetchedUserSaleManger = await SaleManager.findOne({ mobileNumber:phone });
+                const fetchedUserSaleManger = await SaleManager.findOne({ mobileNumber:mobileNumber });
                 // console.log(fetchedUserSaleManger);
                 if(fetchedUserSaleManger){
                     return res.status(400).json("User already exists"); 
                 }else{
                     //console.log("Sale Manager not found and adding new Sale Manager");
-                    const newUser = new SaleManager({ mobileNumber: phone, name,email, type, SaleAdmin: supperAdminID});
+                    const newUser = new SaleManager({ mobileNumber: mobileNumber, name,email, type, SaleAdmin: supperAdminID});
                     await newUser.save();
                     //add admin to sale collection
                     saleAdmin.saleManager.push(newUser._id);
