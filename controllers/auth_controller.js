@@ -130,7 +130,7 @@ const addAdmin = async (req, res) => {
                     return res.status(400).json("User already exists"); 
                 }else{
                     //console.log("Sale Manager not found and adding new Sale Manager");
-                    const newUser = new SaleManager({ mobileNumber: phone, name,email, type });
+                    const newUser = new SaleManager({ mobileNumber: phone, name,email, type, SaleAdmin: supperAdminID});
                     await newUser.save();
                     //add admin to sale collection
                     saleAdmin.saleManager.push(newUser._id);
@@ -153,8 +153,10 @@ const deleteAdmin = async (req, res) => {
         const { type, id } = req.params;
         if(type ==='SaleManager'){
             const saleManager = await SaleManager.findOne({ _id:id });
+            console.log('mk123',saleManager);
             if(saleManager){
-                const saleAdmin = await SaleAdmin.findOne({ _id:saleManager.saleAdmin });
+                const saleAdmin = await SaleAdmin.findOne({ _id:saleManager.SaleAdmin });
+                console.log('mk123',saleAdmin);
                 saleAdmin.saleManager.pull(id);
                 await saleAdmin.save();
                 await saleManager.remove();

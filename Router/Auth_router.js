@@ -18,6 +18,6 @@ router.route('/blogs/search').get(searchBlogs); // Add route for search function
 router.route('/contact').post(addContact);
 router.route('/admin/addAdmin').post(addAdmin);
 router.route('/admin/getAdmins/:mobileNumber').get(fetchAdmin);
-router.route('/admin/deleteAdmin/:type/:id').get(deleteAdmin);
+router.route('/admin/deleteAdmin/:type/:id').delete(deleteAdmin);
 
 module.exports = router;
