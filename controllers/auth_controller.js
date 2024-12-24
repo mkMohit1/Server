@@ -98,7 +98,7 @@ const addAdmin = async (req, res) => {
                     return res.status(400).json("User already exists"); 
                 }
                 console.log("Sale Admin not found and adding new Sale Admin");
-                const newUser = new SaleAdmin({ mobileNumber:phone, name,email, type });
+                const newUser = new SaleAdmin({ mobileNumber:phone, name,email, type, SupperAdmin: supperAdmin._id });  
                 await newUser.save();
                 console.log(newUser);
                     //add admin to sale collection
@@ -111,7 +111,7 @@ const addAdmin = async (req, res) => {
                 if(fetchedUserProductAdmin){
                     return res.status(400).json("User already exists"); 
                 }
-                const newUser = new ProductAdmin({ mobileNumber: phone, name,email, type });
+                const newUser = new ProductAdmin({ mobileNumber: phone, name,email, type, SupperAdmin: supperAdmin._id });
                 await newUser.save();
                 //add admin to product collection
                 supperAdmin.productAdmin.push(newUser._id);
