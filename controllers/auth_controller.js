@@ -70,8 +70,7 @@ const fetchAdmin = async (req, res) => {
         if(admin.type === 'SaleAdmin'){
             const populatedAdmin = await SaleAdmin.findById(admin._id).populate('saleManager');
             const allAdminData = [
-                ...(populatedAdmin.saleManager || []),
-                populatedAdmin
+                ...populatedAdmin.saleManager || []
             ];
             return res.status(200).json(allAdminData);
         }
