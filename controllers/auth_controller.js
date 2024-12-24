@@ -103,7 +103,7 @@ const addAdmin = async (req, res) => {
                     //add admin to sale collection
                     supperAdmin.saleAdmin.push(newUser._id);
                     await supperAdmin.save();
-                    res.status(201).json({ message: "User registered successfully" });
+                    res.status(201).json(newUser);
             }
             else if(type ==='ProductAdmin'){
                 const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber: mobileNumber });
@@ -115,7 +115,7 @@ const addAdmin = async (req, res) => {
                 //add admin to product collection
                 supperAdmin.productAdmin.push(newUser._id);
                 await supperAdmin.save();
-                res.status(201).json({ message: "User registered successfully" });
+                res.status(201).json(newUser);
             }
         }
         }
@@ -135,7 +135,7 @@ const addAdmin = async (req, res) => {
                     //add admin to sale collection
                     saleAdmin.saleManager.push(newUser._id);
                     await saleAdmin.save();
-                    res.status(200).json({ message: "User registered successfully" });
+                    res.status(200).json(newUser);
                 }
             }
         }
