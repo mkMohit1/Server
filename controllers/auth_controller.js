@@ -149,24 +149,45 @@ const addAdmin = async (req, res) => {
 
 const deleteAdmin = async (req, res) => {
     try {
-        console.log(req.params);
         const { type, id } = req.params;
-        if(type ==='SaleManager'){
-            const saleManager = await SaleManager.findOne({ _id:id });
-            console.log('mk123',saleManager);
-            if(saleManager){
-                const saleAdmin = await SaleAdmin.findOne({ _id:saleManager.SaleAdmin });
-                console.log('mk123',saleAdmin);
-                saleAdmin.saleManager.pull(id);
-                await saleAdmin.save();
-                await saleManager.remove();
-                return res.status(200).json({ message: "Sale Manager deleted successfully" });
+
+        // Ensure type is SaleManager
+        if (type === 'SaleManager') {
+            const saleManager = await SaleManager.findOne({ _id: id });
+
+            if (!saleManager) {
+                return res.status(404).json({ message: "Sale Manager not found" });
             }
+
+            // If SaleManager has an associated SaleAdmin, update SaleAdmin to remove reference
+            if (saleManager.SaleAdmin) {
+                const saleAdmin = await SaleAdmin.findOne({ _id: saleManager.SaleAdmin });
+
+                if (saleAdmin) {
+                    // Remove the reference to the SaleManager from the SaleAdmin's saleManager array
+                    saleAdmin.saleManager.pull(id);
+                    await saleAdmin.save();
+                    console.log('SaleManager reference removed from SaleAdmin');
+                }
+            }
+
+            // Now delete the SaleManager using deleteOne() or findByIdAndDelete
+            await SaleManager.findByIdAndDelete(id);  // This will delete the SaleManager document
+            return res.status(200).json({ message: "Sale Manager deleted successfully" });
         }
+
+        // If type is invalid
+        return res.status(400).json({ message: "Invalid type provided" });
     } catch (error) {
-        res.status(400).json("Internal Server Error");
+        // Log the error with more details
+        console.error('Error deleting admin:', error.message);
+        console.error(error.stack);
+
+        // Return a more detailed error response
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
 
 // Controller function to get users
 const users = async (req, res) => {
