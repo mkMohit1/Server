@@ -67,6 +67,14 @@ const fetchAdmin = async (req, res) => {
 
             return res.status(200).json(allAdminData);
         }
+        if(admin.type === 'SaleAdmin'){
+            const populatedAdmin = await SaleAdmin.findById(admin._id).populate('saleManager');
+            const allAdminData = [
+                ...(populatedAdmin.saleManager || []),
+                populatedAdmin
+            ];
+            return res.status(200).json(allAdminData);
+        }
         return res.status(400).json({ message: "Invalid admin type" });
 
     } catch (error) {
@@ -113,14 +121,13 @@ const addAdmin = async (req, res) => {
             }
         }
         }
-        
         else if(type ==='SaleManager'){
             const saleAdmin = await SaleAdmin.findOne({ _id:supperAdminID });
             console.log(saleAdmin);
             if(saleAdmin){
-                console.log("Sale Admin found");
+                // console.log("Sale Admin found");
                 const fetchedUserSaleManger = await SaleManager.findOne({ mobileNumber:phone });
-                console.log(fetchedUserSaleManger);
+                // console.log(fetchedUserSaleManger);
                 if(fetchedUserSaleManger){
                     return res.status(400).json("User already exists"); 
                 }else{
@@ -133,8 +140,8 @@ const addAdmin = async (req, res) => {
                     res.status(200).json({ message: "User registered successfully" });
                 }
             }
-            return res.status(400).json("Supper Admin not found");
         }
+        return res.status(400).json("No Admin not found");
     } catch (error) {
         res.status(400).json("Internal Server Error");
     }
