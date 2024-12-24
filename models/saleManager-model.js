@@ -1,13 +1,13 @@
 const mongoose= require('mongoose');
 
-const saleAdminSchema = new mongoose.Schema({
+const saleManagerSchema = new mongoose.Schema({
     mobileNumber: {
         type: String,
         required: true, 
       },
       type:{
         type: String,
-        default: "SaleAdmin"
+        default: "SaleManager"
       },
       email: {
         type: String,
@@ -15,19 +15,19 @@ const saleAdminSchema = new mongoose.Schema({
       },
       name:{
         type: String,
-        default: "SaleAdmin"
+        default: "SaleManager"
       },
       userImage:{
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
      },
-     saleManager: [{ type: mongoose.Schema.Types.ObjectId, ref: "SaleManager" }], // Array of SaleManager IDs
+     UserWithKyc: [{ type: mongoose.Schema.Types.ObjectId, ref: "SaleManager" }], // Array of SaleManager IDs
      createdAt: {
         type: Date,
         default: Date.now,
       },
 });
 
-const SaleAdmin = mongoose.model("SaleAdmin", saleAdminSchema, "Users");   // creat a SaleAdmin Collection
+const SaleManager = mongoose.model("SaleManager", saleManagerSchema, "Users");   // creat a SaleAdmin Collection
 
-module.exports = SaleAdmin;
+module.exports = SaleManager;

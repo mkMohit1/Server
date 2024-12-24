@@ -1,6 +1,7 @@
 const User = require("../models/commonUser-model");
 const SupperAdmin = require("../models/supperAdmin-model");
 const SaleAdmin = require("../models/saleAdmin-model");
+const SaleManager = require("../models/saleManager-model");
 const ProductAdmin = require("../models/productAdmin-model");
 const path = require('path');
 const FormData = require('form-data');
@@ -79,7 +80,8 @@ const addAdmin = async (req, res) => {
     try {
         console.log(req.body);
         const { phone, name,email, type, supperAdminID } = req.body;
-        const supperAdmin = await SupperAdmin.findOne({ _id:supperAdminID });
+        if(type ==='SaleAdmin' || type ==='ProductAdmin'){
+            const supperAdmin = await SupperAdmin.findOne({ _id:supperAdminID });
         console.log(supperAdmin);
         if(supperAdmin){
             if(type ==='SaleAdmin'){
@@ -110,19 +112,25 @@ const addAdmin = async (req, res) => {
                 res.status(201).json({ message: "User registered successfully" });
             }
         }
-        else if(!supperAdmin){
+        }
+        
+        else if(type ==='SaleManager'){
             const saleAdmin = await SaleAdmin.findOne({ _id:supperAdminID });
-            if(saleAdmin && type =='SaleManager'){
+            console.log(saleAdmin);
+            if(saleAdmin){
+                console.log("Sale Admin found");
                 const fetchedUserSaleManger = await SaleManager.findOne({ mobileNumber:phone });
+                console.log(fetchedUserSaleManger);
                 if(fetchedUserSaleManger){
                     return res.status(400).json("User already exists"); 
                 }else{
+                    //console.log("Sale Manager not found and adding new Sale Manager");
                     const newUser = new SaleManager({ mobileNumber: phone, name,email, type });
                     await newUser.save();
                     //add admin to sale collection
                     saleAdmin.saleManager.push(newUser._id);
                     await saleAdmin.save();
-                    res.status(201).json({ message: "User registered successfully" });
+                    res.status(200).json({ message: "User registered successfully" });
                 }
             }
             return res.status(400).json("Supper Admin not found");
