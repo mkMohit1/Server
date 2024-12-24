@@ -61,7 +61,6 @@ const fetchAdmin = async (req, res) => {
 			const populatedAdmin = await SupperAdmin.findById(admin._id).populate('saleAdmin').populate('productAdmin');
             const allAdminData = [
                 ...(populatedAdmin.saleAdmin || []),
-                populatedAdmin,
                 ...(populatedAdmin.productAdmin || [])
             ];
 
