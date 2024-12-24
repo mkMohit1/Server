@@ -17,6 +17,7 @@ const saleAdminSchema = new mongoose.Schema({
         type: String,
         default: "SaleAdmin"
       },
+      SupperAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "SupperAdmin" }, // SaleAdmin ID
       userImage:{
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'

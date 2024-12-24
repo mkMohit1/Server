@@ -17,6 +17,7 @@ const productAdminSchema = new mongoose.Schema({
         type: String,
         default: "ProductAdmin"
       },
+      SupperAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "SupperAdmin" }, // ProductAdmin ID
       userImage:{
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'

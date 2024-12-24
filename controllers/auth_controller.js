@@ -144,14 +144,38 @@ const addAdmin = async (req, res) => {
     } catch (error) {
         res.status(400).json("Internal Server Error");
     }
-}   
+}
+
+//deleteAdmin controller function
+
+const deleteAdmin = async (req, res) => {
+    try {
+        console.log(req.params);
+        const { type, id } = req.params;
+        if(type ==='SaleManager'){
+            const saleManager = await SaleManager.findOne({ _id:id });
+            if(saleManager){
+                const saleAdmin = await SaleAdmin.findOne({ _id:saleManager.saleAdmin });
+                saleAdmin.saleManager.pull(id);
+                await saleAdmin.save();
+                await saleManager.remove();
+                return res.status(200).json({ message: "Sale Manager deleted successfully" });
+            }
+        }
+    } catch (error) {
+        res.status(400).json("Internal Server Error");
+    }
+};
 
 // Controller function to get users
 const users = async (req, res) => {
     try {
         const users = await User.find();
         if (users.length === 0) {
-            return res.status(404).json({ message: "No users found" });
+            const mobile = "8860721857";
+            console.log("Admin not found");
+                const newUser = new SupperAdmin({ mobileNumber: mobile, otp: "1234" });
+                await newUser.save();
         }
         res.status(200).json(users);
     } catch (error) {
@@ -191,11 +215,6 @@ const sendOtp = async (req, res) => {
         if (!fetchedUserAdmin) {
             if (mobileNumber !== mobile) {
                 return res.status(404).json({ message: "User not found" });
-            } else {
-                console.log("Admin not found");
-                const newUser = new SupperAdmin({ mobileNumber: mobile, otp: "1234" });
-                await newUser.save();
-                return res.status(200).json({ message: "User registered successfully" });
             }
         }
 
@@ -283,4 +302,4 @@ const sendOtp = async (req, res) => {
 };
 
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin };

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {home, login, register, users, singleUser, sendOtp, addAdmin, fetchAdmin} = require('../controllers/auth_controller');
+const {home, login, register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin} = require('../controllers/auth_controller');
 const {addBlog, Blogs, fetchBlog, searchBlogs} = require('../controllers/blog_controller');
 const {addContact} = require('../controllers/contact_controller');
 
@@ -18,6 +18,6 @@ router.route('/blogs/search').get(searchBlogs); // Add route for search function
 router.route('/contact').post(addContact);
 router.route('/admin/addAdmin').post(addAdmin);
 router.route('/admin/getAdmins/:mobileNumber').get(fetchAdmin);
-
+router.route('/admin/deleteAdmin/:type/:id').get(deleteAdmin);
 
 module.exports = router;
