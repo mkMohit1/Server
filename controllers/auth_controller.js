@@ -6,6 +6,7 @@ const ProductAdmin = require("../models/productAdmin-model");
 const Product = require('../models/Product-model');
 const path = require('path');
 const FormData = require('form-data');
+const axios = require('axios');
 const fs = require('fs');
 
 // Controller function to handle home route
@@ -50,7 +51,7 @@ const login = async (req, res) => {
 const fetchAdmin = async (req, res) => {
     try {
         const { mobileNumber } = req.params;
-        console.log(req.params);
+        console.log("dbngrghhgrefg",req.params);
 		const admin = await SupperAdmin.findOne({ mobileNumber }) 
             || await SaleAdmin.findOne({ mobileNumber }) 
             || await ProductAdmin.findOne({ mobileNumber: mobileNumber });
@@ -99,7 +100,7 @@ const addAdmin = async (req, res) => {
       }
   
       // Logic for handling SaleAdmin and ProductAdmin
-      if (type === 'SaleAdmin' || type === 'ProductAdmin') {
+      if (type == 'SaleAdmin' || type == 'ProductAdmin') {
         const supperAdmin = await SupperAdmin.findById(supperAdminID);
         if (!supperAdmin) {
           return res.status(404).json({ error: 'SuperAdmin not found' });
@@ -172,7 +173,6 @@ const deleteAdmin = async (req, res) => {
         console.log(req.params);
         if (type === 'SaleManager') {
             const saleManager = await SaleManager.findOne({ _id: id });
-
             if (!saleManager) {
                 return res.status(404).json({ message: "Sale Manager not found" });
             }
@@ -192,7 +192,6 @@ const deleteAdmin = async (req, res) => {
 
         if (type === 'SaleAdmin') {
             const saleAdmin = await SaleAdmin.findById(id);
-
             if (!saleAdmin) {
                 return res.status(404).json({ message: "Sale Admin not found" });
             }
@@ -225,9 +224,39 @@ const users = async (req, res) => {
         const users = await User.find();
         if (users.length === 0) {
             const mobile = "8860721857";
+            const defaultSaleNumber = '1234567890';
+            const defaultProfuctNumber = '1234567891';
+
             console.log("Admin not found");
-                const newUser = new SupperAdmin({ mobileNumber: mobile, otp: "1234" });
-                await newUser.save();
+
+            const newUser = new SupperAdmin({
+                mobileNumber: mobile,
+                name: "Supper Admin",
+                email: "mohityoga.2016@gmail.com"
+            });
+            
+            const newSaleAdmin = new SaleAdmin({
+                mobileNumber: defaultSaleNumber,
+                name: "Default Sale Admin",
+                email: "defaultSale@gmail.com",
+                SupperAdmin: newUser._id
+            });
+
+            const newProductAdmin = new ProductAdmin({
+                mobileNumber: defaultProfuctNumber,
+                name: "Default Product Admin",
+                email: "defaultProduct@gmail.com",
+                SupperAdmin: newUser._id
+            });
+
+            newUser.saleAdmin.push(newSaleAdmin._id);
+            newUser.productAdmin.push(newProductAdmin._id);
+            await newUser.save();
+            await newSaleAdmin.save();
+            await newProductAdmin.save();
+
+            console.log("Default admins created and linked to SupperAdmin successfully.");
+
         }
         res.status(200).json(users);
     } catch (error) {
@@ -262,6 +291,8 @@ const sendOtp = async (req, res) => {
         }
 
         const mobile = "8860721857"; // Static check for a fallback mobile number
+        const defaultSaleNumber = '1234567890';
+        const defaultProfuctNumber = '1234567891';
         const fetchedUserAdmin = await SupperAdmin.findOne({ mobileNumber });
         console.log(fetchedUserAdmin);
 
@@ -272,10 +303,16 @@ const sendOtp = async (req, res) => {
 
         const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
         const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber });
-
+        if(fetchedUserSaleAdmin && mobileNumber ===defaultSaleNumber){
+            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
+            return res.status(200).json({fetchedUserSaleAdmin});
+        }
+        if(fetchedUserProductAdmin && mobileNumber ===defaultProfuctNumber){
+            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
+            return res.status(200).json({fetchedUserProductAdmin});
+        }
         // If any user is found, proceed to send OTP
         if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin) {
-
             // OTP sending logic based on 'type'
             if (type === 'whatsapp') { // WhatsApp OTP
                 const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
@@ -363,16 +400,17 @@ const updateAdmin = async (req, res) => {
         // Find and update based on type
         switch(type) {
             case 'SaleAdmin':
-                updatedAdmin = await SaleAdmin.findByIdAndUpdate(
-                    id,
-                    { name, email, mobileNumber },
-                    { new: true }
-                );
-                break;
-            case 'ProductAdmin':
                 updatedAdmin = await ProductAdmin.findByIdAndUpdate(
                     id,
-                    { name, email, mobileNumber },
+                    { name, email, mobileNumber, type:'SaleAdmin' },
+                    { new: true }
+                );
+
+                break;
+            case 'ProductAdmin':
+                updatedAdmin = await SaleAdmin.findByIdAndUpdate(
+                    id,
+                    { name, email, mobileNumber, type:'ProductAdmin' },
                     { new: true }
                 );
                 break;
@@ -443,8 +481,6 @@ const updateSaleAdmin = async (req, res) => {
     try {
       if (type === 'SaleAdmin') {
         const { saleAdminId, newSaleAdminId } = req.body;
-        
-        // Validate required fields
         if (!saleAdminId || !newSaleAdminId) {
           return res.status(400).json({ error: 'Both SaleAdmin and New SaleAdmin ID are required' });
         }
@@ -455,6 +491,7 @@ const updateSaleAdmin = async (req, res) => {
         }
   
         const newSaleAdmin = await SaleAdmin.findById(newSaleAdminId);
+        console.log(newSaleAdmin);
         if (!newSaleAdmin) {
           return res.status(404).json({ error: 'New SaleAdmin not found' });
         }
@@ -475,14 +512,15 @@ const updateSaleAdmin = async (req, res) => {
           $push: { saleManager: { $each: saleManagersToMove } }
         });
   
-        return res.status(200).json({ message: 'Sale Managers successfully moved to new SaleAdmin' });
+        // Delete the SaleAdmin after transfer
+        await SaleAdmin.findByIdAndDelete(saleAdminId);
+  
+        return res.status(200).json({ message: 'Sale Managers successfully moved to new SaleAdmin and old SaleAdmin deleted' });
   
       }
   
       if (type === 'ProductAdmin') {
         const { productAdminId, newProductAdminId } = req.body;
-        console.log(req.body);
-        // Validate required fields
         if (!productAdminId || !newProductAdminId) {
           return res.status(400).json({ error: 'Both ProductAdmin and New ProductAdmin ID are required' });
         }
@@ -517,13 +555,18 @@ const updateSaleAdmin = async (req, res) => {
           $push: { products: { $each: productsToMove.map(product => product._id) } }
         });
   
-        return res.status(200).json({ message: 'Products successfully moved to new ProductAdmin' });
+        // Delete the ProductAdmin after transfer
+        await ProductAdmin.findByIdAndDelete(productAdminId);
+  
+        return res.status(200).json({ message: 'Products successfully moved to new ProductAdmin and old ProductAdmin deleted' });
       }
+  
     } catch (error) {
       console.error('Error in updating admin:', error);
       res.status(500).json({ error: 'An error occurred while updating the admin' });
     }
-};
+  };
+  
   
 
 // Export the controller functions along with the multer upload middleware

@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const {home, login, register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin,updateAdmin,checkSaleManagers,checkProduct,updateSaleAdmin} = require('../controllers/auth_controller');
+const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin,updateAdmin,checkSaleManagers,checkProduct,updateSaleAdmin} = require('../controllers/auth_controller');
 const {addBlog, Blogs, fetchBlog, searchBlogs, CoverTopBlog} = require('../controllers/blog_controller');
 const {fetchProduct, addProduct,deleteProduct,fetchAllProduct} = require('../controllers/product_controller');
 const {addContact} = require('../controllers/contact_controller');
 
 // Define the routes
-router.route('/').get(home);
-router.route('/login').post(login);
 router.route('/register').post(register);
 router.route('/users').get(users);
 router.route('/user/:mobile').get(singleUser);
