@@ -22,7 +22,7 @@ const productAdminSchema = new mongoose.Schema({
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
      },
-     products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Products" }], // Array of Products IDs
+     products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], // Array of Products IDs
      createdAt: {
         type: Date,
         default: Date.now,

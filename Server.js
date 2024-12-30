@@ -7,6 +7,7 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
+
 // Middleware for routing
 app.use("/", authRouter);
 

@@ -9,7 +9,7 @@ const supperAdminSchema = new mongoose.Schema({
         type: String,
         default: "SupperAdmin"
       },
-      otp: {
+      email: {
         type: String,
         required: false,
       },

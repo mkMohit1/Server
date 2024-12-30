@@ -14,16 +14,16 @@ const productSchema = new mongoose.Schema({
         required: true,
         default: 0,
     },
-    // rentPrice: {
-    //     type: Number,
-    //     required: true,
-    //     default: 0,
-    // },
-    // salePrice: {
-    //     type: Number,
-    //     required: true,
-    //     default: 0,
-    // },
+    rentQuantity: {
+        type: Number,
+        required: false,
+        default: 1,
+    },
+    saleQuantity: {
+        type: Number,
+        required: false,
+        default: 1,
+    },
     discount: {
         type: Number,
         default: 0,

@@ -3,6 +3,7 @@ const SupperAdmin = require("../models/supperAdmin-model");
 const SaleAdmin = require("../models/saleAdmin-model");
 const SaleManager = require("../models/saleManager-model");
 const ProductAdmin = require("../models/productAdmin-model");
+const Product = require('../models/Product-model');
 const path = require('path');
 const FormData = require('form-data');
 const fs = require('fs');
@@ -29,9 +30,9 @@ const register = async (req, res) => {
 
         const newUser = new User({ userName, mobileNumber });
         await newUser.save();
-        res.status(201).json({ message: "User registered successfully" });
+        return res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -39,9 +40,9 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         console.log(req.body);
-        res.status(200).json(req.body);
+        return res.status(200).json(req.body);
     } catch (error) {
-        res.status(400).json("Internal Server Error");
+        return res.status(400).json("Internal Server Error");
     }
 };
 
@@ -77,87 +78,98 @@ const fetchAdmin = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
-// addAdmin controller function
 const addAdmin = async (req, res) => {
     try {
-        console.log(req.body);
-        const { mobileNumber, name,email, type, supperAdminID } = req.body;
-        if(type ==='SaleAdmin' || type ==='ProductAdmin'){
-            const supperAdmin = await SupperAdmin.findOne({ _id:supperAdminID });
-        console.log(supperAdmin);
-        if(supperAdmin){
-            if(type ==='SaleAdmin'){
-                console.log("mk");
-            const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber:mobileNumber });
-                if(fetchedUserSaleAdmin){
-                    return res.status(400).json("User already exists"); 
-                }
-                console.log("Sale Admin not found and adding new Sale Admin");
-                const newUser = new SaleAdmin({ mobileNumber:mobileNumber, name,email, type, SupperAdmin: supperAdmin._id });  
-                await newUser.save();
-                console.log(newUser);
-                    //add admin to sale collection
-                    supperAdmin.saleAdmin.push(newUser._id);
-                    await supperAdmin.save();
-                    res.status(201).json({ message: "User registered successfully",
-                        newUser
-                     });
-            }
-            else if(type ==='ProductAdmin'){
-                const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber: mobileNumber });
-                if(fetchedUserProductAdmin){
-                    return res.status(400).json("User already exists"); 
-                }
-                const newUser = new ProductAdmin({ mobileNumber: mobileNumber, name,email, type, SupperAdmin: supperAdmin._id });
-                await newUser.save();
-                //add admin to product collection
-                supperAdmin.productAdmin.push(newUser._id);
-                await supperAdmin.save();
-                res.status(201).json({ message: "User registered successfully",
-                    newUser
-                 });
-            }
+      console.log(req.body);
+      const { mobileNumber, name, email, type, supperAdminID } = req.body;
+  
+      // Check if the mobile number is already registered
+      const allUser = await User.find({ mobileNumber });
+      if (allUser.length > 0) {
+        return res.status(400).json({ error: `This mobile number ${mobileNumber} is already registered` });
+      }
+  
+      // Validate admin type
+      if (!['SaleAdmin', 'ProductAdmin', 'SaleManager'].includes(type)) {
+        return res.status(400).json({ error: 'Invalid admin type provided' });
+      }
+  
+      // Logic for handling SaleAdmin and ProductAdmin
+      if (type === 'SaleAdmin' || type === 'ProductAdmin') {
+        const supperAdmin = await SupperAdmin.findById(supperAdminID);
+        if (!supperAdmin) {
+          return res.status(404).json({ error: 'SuperAdmin not found' });
         }
+  
+        const existingAdmin = type === 'SaleAdmin'
+          ? await SaleAdmin.findOne({ mobileNumber })
+          : await ProductAdmin.findOne({ mobileNumber });
+  
+        if (existingAdmin) {
+          return res.status(400).json({ error: `${type} with this mobile number already exists` });
         }
-        else if(type ==='SaleManager'){
-            const saleAdmin = await SaleAdmin.findOne({ _id:supperAdminID });
-            console.log(saleAdmin);
-            if(saleAdmin){
-                // console.log("Sale Admin found");
-                const fetchedUserSaleManger = await SaleManager.findOne({ mobileNumber:mobileNumber });
-                // console.log(fetchedUserSaleManger);
-                if(fetchedUserSaleManger){
-                    return res.status(400).json("User already exists"); 
-                }else{
-                    //console.log("Sale Manager not found and adding new Sale Manager");
-                    const newUser = new SaleManager({ mobileNumber: mobileNumber, name,email, type, SaleAdmin: supperAdminID});
-                    await newUser.save();
-                    //add admin to sale collection
-                    saleAdmin.saleManager.push(newUser._id);
-                    await saleAdmin.save();
-                    res.status(200).json({ message: "User registered successfully",
-                    newUser                        
-                     });
-                }
-            }
+  
+        const newUser = type === 'SaleAdmin'
+          ? new SaleAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id })
+          : new ProductAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id });
+  
+        await newUser.save();
+  
+        // Update SupperAdmin to include this new admin
+        if (type === 'SaleAdmin') {
+          supperAdmin.saleAdmin.push(newUser._id);
+        } else {
+          supperAdmin.productAdmin.push(newUser._id);
         }
-        return res.status(400).json("No Admin not found");
+  
+        await supperAdmin.save();
+  
+        return res.status(201).json({ message: `${type} registered successfully`, newUser });
+      }
+  
+      // Logic for handling SaleManager
+      if (type === 'SaleManager') {
+        const saleAdmin = await SaleAdmin.findById(supperAdminID);  // Assuming supperAdminID is SaleAdmin's ID
+        if (!saleAdmin) {
+          return res.status(404).json({ error: 'SaleAdmin not found' });
+        }
+  
+        const existingSaleManager = await SaleManager.findOne({ mobileNumber });
+        if (existingSaleManager) {
+          return res.status(400).json({ error: 'SaleManager with this mobile number already exists' });
+        }
+  
+        const newSaleManager = new SaleManager({
+          mobileNumber, name, email, type, SaleAdmin: supperAdminID
+        });
+  
+        await newSaleManager.save();
+        saleAdmin.saleManager.push(newSaleManager._id);
+        await saleAdmin.save();
+  
+        return res.status(200).json({ message: 'SaleManager registered successfully', newSaleManager });
+      }
+  
+      return res.status(400).json({ error: 'No matching admin type found' });
+  
     } catch (error) {
-        res.status(400).json("Internal Server Error");
+      console.error('Error in addAdmin:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-}
+};
+  
+
 
 //deleteAdmin controller function
 
 const deleteAdmin = async (req, res) => {
     try {
         const { type, id } = req.params;
-
-        // Ensure type is SaleManager
+        console.log(req.params);
         if (type === 'SaleManager') {
             const saleManager = await SaleManager.findOne({ _id: id });
 
@@ -165,34 +177,46 @@ const deleteAdmin = async (req, res) => {
                 return res.status(404).json({ message: "Sale Manager not found" });
             }
 
-            // If SaleManager has an associated SaleAdmin, update SaleAdmin to remove reference
             if (saleManager.SaleAdmin) {
                 const saleAdmin = await SaleAdmin.findOne({ _id: saleManager.SaleAdmin });
 
                 if (saleAdmin) {
-                    // Remove the reference to the SaleManager from the SaleAdmin's saleManager array
                     saleAdmin.saleManager.pull(id);
                     await saleAdmin.save();
-                    console.log('SaleManager reference removed from SaleAdmin');
                 }
             }
 
-            // Now delete the SaleManager using deleteOne() or findByIdAndDelete
-            await SaleManager.findByIdAndDelete(id);  // This will delete the SaleManager document
+            await SaleManager.findByIdAndDelete(id);
             return res.status(200).json({ message: "Sale Manager deleted successfully" });
         }
 
-        // If type is invalid
+        if (type === 'SaleAdmin') {
+            const saleAdmin = await SaleAdmin.findById(id);
+
+            if (!saleAdmin) {
+                return res.status(404).json({ message: "Sale Admin not found" });
+            }
+            await SaleAdmin.findByIdAndDelete(id);
+            return res.status(200).json({ message: "Sale Admin deleted successfully" });
+        }
+
+        if(type === 'ProductAdmin'){
+            const productAdmin = await ProductAdmin.findById(id);
+            if (!productAdmin) {
+                return res.status(404).json({ message: "Product Admin not found" });
+            }
+            await ProductAdmin.findByIdAndDelete(id);
+            return res.status(200).json({ message: "Product Admin deleted successfully" });
+        }
         return res.status(400).json({ message: "Invalid type provided" });
+
     } catch (error) {
-        // Log the error with more details
         console.error('Error deleting admin:', error.message);
         console.error(error.stack);
-
-        // Return a more detailed error response
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
 
 
 // Controller function to get users
@@ -219,9 +243,9 @@ const singleUser = async (req, res) => {
         if (user.length === 0) {
             return res.status(404).json({ message: "No users found" });
         }
-        res.status(200).json(user);
+        return res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ message: "Error fetching users" });
+        return res.status(500).json({ message: "Error fetching users" });
     }
 };
 
@@ -232,102 +256,275 @@ const sendOtp = async (req, res) => {
         const { mobileNumber, otp, type } = req.body;
         console.log(req.body);
 
-        // Validation: Check if mobileNumber and otp are provided
+        // Validation: Check if mobileNumber, otp, and type are provided
         if (!mobileNumber || !otp || !type) {
             return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
         }
-        const mobile = "8860721857";
+
+        const mobile = "8860721857"; // Static check for a fallback mobile number
         const fetchedUserAdmin = await SupperAdmin.findOne({ mobileNumber });
         console.log(fetchedUserAdmin);
-        
-        if (!fetchedUserAdmin) {
-            if (mobileNumber !== mobile) {
-                return res.status(404).json({ message: "User not found" });
-            }
+
+        // Check if the user exists
+        if (!fetchedUserAdmin && mobileNumber !== mobile) {
+            return res.status(404).json({ message: "User not found" });
         }
 
         const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
         const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber });
 
-        if (fetchedUserAdmin) {
-            return res.status(200).json(fetchedUserAdmin);  // Return here to stop further execution
-        } else if (fetchedUserSaleAdmin) {
-            return res.status(200).json(fetchedUserSaleAdmin);  // Return here to stop further execution
-        } else if (fetchedUserProductAdmin) {
-            return res.status(200).json(fetchedUserProductAdmin);  // Return here to stop further execution
-        } else {
-            return res.status(404).json({ message: "User not found" });  // Return here to stop further execution
-        }
+        // If any user is found, proceed to send OTP
+        if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin) {
 
-        if (type === 'whatsapp') { // WhatsApp OTP
-            const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
+            // OTP sending logic based on 'type'
+            if (type === 'whatsapp') { // WhatsApp OTP
+                const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
 
-            const formData = new FormData();
-            formData.append("to", formattedNumber);
-            formData.append("type", "mediatemplate");
-            formData.append("template_name", "logincode");
-            formData.append("channel", "whatsapp");
-            formData.append("from", "+919810866265"); // Replace with your WhatsApp number
-            formData.append("params", otp);
-            const imagePath = path.join(__dirname, "/4.jpeg");
-            formData.append("media", fs.createReadStream(imagePath));
+                const formData = new FormData();
+                formData.append("to", formattedNumber);
+                formData.append("type", "mediatemplate");
+                formData.append("template_name", "logincode");
+                formData.append("channel", "whatsapp");
+                formData.append("from", "+919810866265"); // Replace with your WhatsApp number
+                formData.append("params", otp);
+                const imagePath = path.join(__dirname, "/4.jpeg");
+                formData.append("media", fs.createReadStream(imagePath));
 
-            try {
-                const response = await axios.post(
-                    "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
-                    formData,
-                    {
-                        headers: {
-                            ...formData.getHeaders(),
-                            "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
+                try {
+                    const response = await axios.post(
+                        "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
+                        formData,
+                        {
+                            headers: {
+                                ...formData.getHeaders(),
+                                "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
+                            },
+                        }
+                    );
+                    return res.status(200).json({
+                        message: "WhatsApp OTP sent successfully",
+                        data: response.data,
+                        otp: otp,
+                    });
+                } catch (error) {
+                    console.error("Error sending WhatsApp message: ", error);
+                    return res.status(500).json({
+                        message: "Failed to send WhatsApp OTP",
+                        error: error.response ? error.response.data : error.message,
+                    });
+                }
+            } else if (type === 'voice') { // Voice OTP
+                console.log(process.env.SOLUTIONS_INFINI_API_URL);
+                try {
+                    const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
+                        params: {
+                            api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
+                            method: "dial.click2call",
+                            caller: mobileNumber,
+                            receiver: "ivr:250142",  // Example IVR receiver number
+                            format: "json",
+                            meta: JSON.stringify({ OTP: otp }),
                         },
-                    }
-                );
-                return res.status(200).json({
-                    message: "WhatsApp OTP sent successfully",
-                    data: response.data,
-                    otp: otp,
-                });
-            } catch (error) {
-                console.error("Error sending WhatsApp message: ", error);
-                return res.status(500).json({
-                    message: "Failed to send WhatsApp OTP",
-                    error: error.response ? error.response.data : error.message,
-                });
-            }
-        } else if (type === 'voice') { // Voice OTP
-            try {
-                const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
-                    params: {
-                        api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
-                        method: "dial.click2call",
-                        caller: mobileNumber,
-                        receiver: "ivr:250142",  // Example IVR receiver number
-                        format: "json",
-                        meta: JSON.stringify({ OTP: otp }),
-                    },
-                });
-                return res.status(200).json({
-                    message: "Voice OTP sent successfully",
-                    data: response.data,
-                    otp: otp,
-                });
-            } catch (error) {
-                console.error("Error sending Voice OTP: ", error);
-                return res.status(500).json({
-                    message: "Failed to send Voice OTP",
-                    error: error.response ? error.response.data : error.message,
-                });
+                    });
+                    return res.status(200).json({
+                        message: "Voice OTP sent successfully",
+                        data: response.data,
+                        otp: otp,
+                    });
+                } catch (error) {
+                    console.error("Error sending Voice OTP: ", error);
+                    return res.status(500).json({
+                        message: "Failed to send Voice OTP",
+                        error: error.response ? error.response.data : error.message,
+                    });
+                }
+            } else {
+                // If type is neither 'whatsapp' nor 'voice'
+                return res.status(400).json({ message: "Invalid OTP type. Must be either 'whatsapp' or 'voice'." });
             }
         } else {
-            // If type is neither 'whatsapp' nor 'VoiceCall'
-            return res.status(400).json({ message: "Invalid OTP type. Must be either 'whatsapp' or 'VoiceCall'." });
+            return res.status(404).json({ message: "User not found" });
         }
+
     } catch (error) {
         console.error("Error sending OTP: ", error);
         return res.status(500).json({ message: "Error sending OTP", error: error.message });
     }
 };
 
+
+
+const updateAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, mobileNumber, type } = req.body;
+        let updatedAdmin;
+        console.log("mkdsfds", req.body);
+        // Find and update based on type
+        switch(type) {
+            case 'SaleAdmin':
+                updatedAdmin = await SaleAdmin.findByIdAndUpdate(
+                    id,
+                    { name, email, mobileNumber },
+                    { new: true }
+                );
+                break;
+            case 'ProductAdmin':
+                updatedAdmin = await ProductAdmin.findByIdAndUpdate(
+                    id,
+                    { name, email, mobileNumber },
+                    { new: true }
+                );
+                break;
+            case 'SaleManager':
+                updatedAdmin =await SaleManager.findByIdAndUpdate(
+                    id,
+                    {name, email, mobileNumber},
+                    {new: true}
+                )
+            default:
+                return res.status(400).json({ message: "Invalid admin type" });
+        }
+
+        if (!updatedAdmin) {
+            return res.status(404).json({ message: "Admin not found" });
+        }
+
+        res.status(200).json(updatedAdmin);
+    } catch (error) {
+        console.error('Error updating admin:', error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+
+const checkSaleManagers = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const saleAdmin = await SaleAdmin.findById(id).populate('saleManager');
+        const allSaleAdmin = await SaleAdmin.find({type: 'SaleAdmin'});
+        if (!saleAdmin) {
+            return res.status(404).json({ message: "Sale Admin not found" });
+        }
+
+        return res.status(200).json({ message: "Sale Managers found", saleManagers: saleAdmin.saleManager, saleAdmins: allSaleAdmin.filter((admin)=>admin.id !==id) });
+    } catch (error) {
+        console.error("Error fetching sale managers:", error);
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+const checkProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const product = await ProductAdmin.findById(id);
+        const allProductAdmin = await ProductAdmin.find({type:"ProductAdmin"});
+        if (!product.products) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        return res.status(200).json({ product: product.products, otherProductAdmin: allProductAdmin.filter((admin)=>admin.id !==id) });
+    } catch (error) {
+        console.error("Error fetching product:", error);
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+const updateSaleAdmin = async (req, res) => {
+    const { type } = req.body;
+  
+    // Check if the type is either SaleAdmin or ProductAdmin
+    if (type !== 'SaleAdmin' && type !== 'ProductAdmin') {
+      return res.status(400).json({ error: 'Invalid admin type provided' });
+    }
+  
+    try {
+      if (type === 'SaleAdmin') {
+        const { saleAdminId, newSaleAdminId } = req.body;
+        
+        // Validate required fields
+        if (!saleAdminId || !newSaleAdminId) {
+          return res.status(400).json({ error: 'Both SaleAdmin and New SaleAdmin ID are required' });
+        }
+  
+        const saleAdmin = await SaleAdmin.findById(saleAdminId);
+        if (!saleAdmin) {
+          return res.status(404).json({ error: 'SaleAdmin not found' });
+        }
+  
+        const newSaleAdmin = await SaleAdmin.findById(newSaleAdminId);
+        if (!newSaleAdmin) {
+          return res.status(404).json({ error: 'New SaleAdmin not found' });
+        }
+  
+        const saleManagersToMove = saleAdmin.saleManager;
+  
+        // Update the SaleAdmin reference for SaleManagers
+        await SaleManager.updateMany(
+          { _id: { $in: saleManagersToMove } },
+          { $set: { SaleAdmin: newSaleAdminId } }
+        );
+  
+        // Remove SaleManagers from the old SaleAdmin and add to the new SaleAdmin
+        await SaleAdmin.findByIdAndUpdate(saleAdminId, {
+          $pull: { saleManager: { $in: saleManagersToMove } }
+        });
+        await SaleAdmin.findByIdAndUpdate(newSaleAdminId, {
+          $push: { saleManager: { $each: saleManagersToMove } }
+        });
+  
+        return res.status(200).json({ message: 'Sale Managers successfully moved to new SaleAdmin' });
+  
+      }
+  
+      if (type === 'ProductAdmin') {
+        const { productAdminId, newProductAdminId } = req.body;
+        console.log(req.body);
+        // Validate required fields
+        if (!productAdminId || !newProductAdminId) {
+          return res.status(400).json({ error: 'Both ProductAdmin and New ProductAdmin ID are required' });
+        }
+  
+        const productAdmin = await ProductAdmin.findById(productAdminId);
+        if (!productAdmin) {
+          return res.status(404).json({ error: 'ProductAdmin not found' });
+        }
+  
+        const newProductAdmin = await ProductAdmin.findById(newProductAdminId);
+        if (!newProductAdmin) {
+          return res.status(404).json({ error: 'New ProductAdmin not found' });
+        }
+  
+        // Fetch all products that belong to the current ProductAdmin
+        const productsToMove = await Product.find({ productAdmin: productAdminId });
+        if (productsToMove.length === 0) {
+          return res.status(404).json({ error: 'No products found for this ProductAdmin' });
+        }
+  
+        // Update productAdmin reference for the products
+        await Product.updateMany(
+          { _id: { $in: productsToMove.map(product => product._id) } },
+          { $set: { productAdmin: newProductAdminId } }
+        );
+  
+        // Remove products from the old ProductAdmin and add to the new one
+        await ProductAdmin.findByIdAndUpdate(productAdminId, {
+          $pull: { products: { $in: productsToMove.map(product => product._id) } }
+        });
+        await ProductAdmin.findByIdAndUpdate(newProductAdminId, {
+          $push: { products: { $each: productsToMove.map(product => product._id) } }
+        });
+  
+        return res.status(200).json({ message: 'Products successfully moved to new ProductAdmin' });
+      }
+    } catch (error) {
+      console.error('Error in updating admin:', error);
+      res.status(500).json({ error: 'An error occurred while updating the admin' });
+    }
+};
+  
+
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin,updateAdmin,checkSaleManagers,checkProduct,updateSaleAdmin };

@@ -9,7 +9,7 @@ const commonUserSchema = new mongoose.Schema({
     type: String,
     default: "commonUser"
   },
-  otp: {
+  email: {
     type: String,
     required: false,
   },

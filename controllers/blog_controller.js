@@ -60,6 +60,7 @@ const fetchBlog = async (req, res) => {
 const searchBlogs = async (req, res) => {
     try {
         const { query } = req.query; // Extract the query parameter
+        console.log(query);
         if (!query) {
             return res.status(400).json({ message: "Search query is required" });
         }
@@ -68,7 +69,9 @@ const searchBlogs = async (req, res) => {
         const blogs = await Blog.find({
             $or: [
                 { title: searchRegex },
-                { content: searchRegex } // Check if the content contains the query
+                { content: searchRegex },
+                {description: searchRegex}, // Check if the content contains the query
+                {category: searchRegex}
             ]
         }).sort({ date: -1 }); // Sort by latest date
 
@@ -78,5 +81,30 @@ const searchBlogs = async (req, res) => {
     }
 };
 
+const CoverTopBlog = async (req, res) => {
+    try {
+      const { blogId } = req.body;
+  
+      const currentCoverTopBlog = await Blog.findOne({ isOnCoverTop: 'yes' });
+      if (currentCoverTopBlog) {
+        currentCoverTopBlog.isOnCoverTop = 'no';
+        await currentCoverTopBlog.save();
+      }
+  
+      const blogToUpdate = await Blog.findById(blogId);
+      if (!blogToUpdate) {
+        return res.status(404).json({ message: 'Blog not found' });
+      }
+  
+      blogToUpdate.isOnCoverTop = 'yes';
+      await blogToUpdate.save();
+      console.log(blogToUpdate);
+      res.status(200).json({updateBlog:blogToUpdate, previous:currentCoverTopBlog});
+  
+    } catch (error) {
+      res.status(500).json({ message: `Error: ${error.message}` });
+    }
+};
+
 // Export the controller functions
-module.exports = { addBlog, Blogs, fetchBlog, upload, searchBlogs };
+module.exports = { addBlog, Blogs, fetchBlog, upload, searchBlogs, CoverTopBlog };

@@ -1,24 +1,50 @@
 const ProductAdmin= require('../models/productAdmin-model');
-const Product = require('../models/product-model');
+const Product = require('../models/Product-model');
 
 const fetchProduct = async (req, res) => {
     try {
         console.log('fetchProduct');
         console.log(req.params);
-        const {id} = req.params;
-         // Ensure ProductAdmin.findById is the correct query
-         const productAdmin = await ProductAdmin.findOne({_id:id}); // Assuming 'products' is a reference field
-         if(productAdmin){
-            console.log(productAdmin);
-            const products = await productAdmin.findById(productAdmin._id).populate('products');
-            console.log(products);
-         }
-         console.log(products);
-        res.status(200).json({ products });
+        const { id } = req.params;
+
+        // Find the productAdmin by ID (without population first)
+        const productAdmin = await ProductAdmin.findOne({ _id: id });
+
+        // If the productAdmin is not found, send a 404 response
+        if (!productAdmin) {
+            return res.status(404).json({ message: "ProductAdmin not found" });
+        }
+
+        // If found, populate the products field
+        const populatedProductAdmin = await productAdmin.populate('products');
+        console.log('Populated Product Admin:', populatedProductAdmin);
+
+        // Send the populated products as response
+        res.status(200).json({ products: populatedProductAdmin.products });
+
     } catch (error) {
+        console.error("Error:", error);
         res.status(500).json({ message: `Internal Server Error: ${error.message}` });
     }
 };
+
+const fetchAllProduct = async (req, res) => {
+    try {
+        // Await the execution of the query to get the actual data
+        const allProduct = await Product.find(); 
+
+        // Check if products were found
+        if (allProduct.length > 0) {
+            res.status(200).json({ products: allProduct });  // Return the products
+        } else {
+            res.status(404).json({ message: "No products found" });  // Return a "not found" response
+        }
+    } catch (error) {
+        // Handle the error and send a response with a message
+        res.status(500).json({ message: `Error while fetching all product: ${error.message}` });
+    }
+};
+
 
 const addProduct = async (req, res) => {
     try {
@@ -51,4 +77,7 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = {addProduct,deleteProduct , fetchProduct};
+
+
+
+module.exports = {addProduct,deleteProduct , fetchProduct, fetchAllProduct};

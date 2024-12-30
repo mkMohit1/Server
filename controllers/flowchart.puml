@@ -65,3 +65,21 @@ endif
 
 stop
 @enduml
+
+
+'-------------------- New Page --------------------
+@startuml
+
+Start
+:admin is logged in;
+
+if(Admin login in) then(yes)
+  :Go the Dashboard;
+    if(Blog) then(yes)
+    :Go to Blog;
+
+
+@enduml
+
+
+'-------------------- New Page --------------------
