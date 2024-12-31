@@ -36,7 +36,7 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    stauts:{
+    status:{
         type: String,
         default: "Active",  
     },

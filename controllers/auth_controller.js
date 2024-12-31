@@ -397,20 +397,21 @@ const updateAdmin = async (req, res) => {
         const { name, email, mobileNumber, type } = req.body;
         let updatedAdmin;
         console.log("mkdsfds", req.body);
+        console.log("mkdsfds", req.params);
         // Find and update based on type
         switch(type) {
             case 'SaleAdmin':
-                updatedAdmin = await ProductAdmin.findByIdAndUpdate(
+                updatedAdmin = await SaleAdmin.findByIdAndUpdate(
                     id,
-                    { name, email, mobileNumber, type:'SaleAdmin' },
+                    { name, email, mobileNumber },
                     { new: true }
                 );
 
                 break;
             case 'ProductAdmin':
-                updatedAdmin = await SaleAdmin.findByIdAndUpdate(
+                updatedAdmin = await ProductAdmin.findByIdAndUpdate(
                     id,
-                    { name, email, mobileNumber, type:'ProductAdmin' },
+                    { name, email, mobileNumber },
                     { new: true }
                 );
                 break;
@@ -419,7 +420,8 @@ const updateAdmin = async (req, res) => {
                     id,
                     {name, email, mobileNumber},
                     {new: true}
-                )
+                );
+                break;
             default:
                 return res.status(400).json({ message: "Invalid admin type" });
         }

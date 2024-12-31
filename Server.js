@@ -4,9 +4,12 @@ const app = express();
 const authRouter = require('./Router/Auth_router'); // Import the router
 const connectDb = require('./utils/db');
 const cors = require("cors");
+const path = require('path');
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware for routing
 app.use("/", authRouter);
