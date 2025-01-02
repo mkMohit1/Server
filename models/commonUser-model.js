@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const commonUserSchema = new mongoose.Schema({
   mobileNumber: {
     type: String,
-    required: true, 
+    required: false, 
   },
   type:{
     type: String,

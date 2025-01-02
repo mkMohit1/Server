@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');  // Import multer for file handling
 const path = require('path');     // Import path to manage file paths
+const passportSetup = require('../config/passport'); // Make sure this is the correct import path
+
 const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkProduct, updateSaleAdmin } = require('../controllers/auth_controller');
 const { addBlog, Blogs, fetchBlog, searchBlogs, CoverTopBlog } = require('../controllers/blog_controller');
 const { fetchProduct, addProduct, deleteProduct, fetchAllProduct, updateProduct } = require('../controllers/product_controller');
@@ -59,7 +61,17 @@ router.route('/products/allproducts').get(fetchAllProduct);
 router.route('/admin/updateProduct/:id').put(upload.single('productImage'),updateProduct);
 
 
-// 
+// for google authentication
+router.route('/auth/google').get(passportSetup.authenticate('google', {
+  scope: ['profile', 'email']
+}));
+router.route('/auth/google/callback').get(passportSetup.authenticate('google'), (req, res) => {
+  //get the user data
+  console.log(req.user);
+
+ // Redirect to the frontend with user information in a query parameter
+  res.redirect(`http://localhost:3000?user=${JSON.stringify(req.user)}`);
+});
 
 
 module.exports = router;
