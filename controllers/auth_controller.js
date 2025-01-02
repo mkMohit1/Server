@@ -4,6 +4,7 @@ const SaleAdmin = require("../models/saleAdmin-model");
 const SaleManager = require("../models/saleManager-model");
 const ProductAdmin = require("../models/productAdmin-model");
 const Product = require('../models/Product-model');
+const Address = require('../models/Address-model');
 const path = require('path');
 const FormData = require('form-data');
 const axios = require('axios');
@@ -74,6 +75,22 @@ const fetchAdmin = async (req, res) => {
                 ...populatedAdmin.saleManager || []
             ];
             return res.status(200).json(allAdminData);
+        }
+        if(admin.type === 'SaleManager'){
+            const populatedAdmin = await SaleManager.findById(admin._id)
+                .populate({
+                    path: 'customers',
+                    populate: {
+                    path: 'addresses',
+                    model: 'Address',
+                    options: { lean: true }  // This will ensure addresses are also populated as plain objects
+                    },
+                    options: { lean: true }  // This ensures customers are populated as plain objects
+                })
+                .lean();  // This ensures the SaleManager itself is a plain object
+                // Log the result to inspect the populated data
+                console.dir(populatedAdmin.customers, { depth: null });
+            return res.status(200).json({customers: populatedAdmin.customers});
         }
         return res.status(400).json({ message: "Invalid admin type" });
 
@@ -171,6 +188,7 @@ const deleteAdmin = async (req, res) => {
     try {
         const { type, id } = req.params;
         console.log(req.params);
+
         if (type === 'SaleManager') {
             const saleManager = await SaleManager.findOne({ _id: id });
             if (!saleManager) {
@@ -193,20 +211,80 @@ const deleteAdmin = async (req, res) => {
         if (type === 'SaleAdmin') {
             const saleAdmin = await SaleAdmin.findById(id);
             if (!saleAdmin) {
-                return res.status(404).json({ message: "Sale Admin not found" });
+              return res.status(404).json({ message: "Sale Admin not found" });
             }
+      
+            // Check if this SaleAdmin has saleManagers associated with it
+            if (saleAdmin.saleManager && saleAdmin.saleManager.length > 0) {
+              // Get the default SaleAdmin (the one without specific saleManagers)
+              const defaultSaleAdmin = await SaleAdmin.findOne({ mobileNumber: '1234567890' }); // Default SaleAdmin number
+      
+              if (!defaultSaleAdmin) {
+                return res.status(404).json({ message: "Default Sale Admin not found" });
+              }
+      
+              // Move saleManagers to the default SaleAdmin
+              const saleManagersToMove = saleAdmin.saleManager;
+      
+              // Update saleManagers to point to the default admin
+              await SaleManager.updateMany(
+                { _id: { $in: saleManagersToMove } },
+                { $set: { saleAdmin: defaultSaleAdmin._id } }
+              );
+      
+              // Remove saleManagers from the current SaleAdmin
+              await SaleAdmin.findByIdAndUpdate(saleAdmin._id, {
+                $pull: { saleManager: { $in: saleManagersToMove } }
+              });
+      
+              // Add saleManagers to the default SaleAdmin
+              await SaleAdmin.findByIdAndUpdate(defaultSaleAdmin._id, {
+                $push: { saleManager: { $each: saleManagersToMove } }
+              });
+            }
+            // Delete the SaleAdmin after transferring the saleManagers (if any)
             await SaleAdmin.findByIdAndDelete(id);
             return res.status(200).json({ message: "Sale Admin deleted successfully" });
         }
 
-        if(type === 'ProductAdmin'){
+        if (type === 'ProductAdmin') {
             const productAdmin = await ProductAdmin.findById(id);
             if (!productAdmin) {
                 return res.status(404).json({ message: "Product Admin not found" });
             }
+
+            // Check if this ProductAdmin has products associated with it
+            if (productAdmin.products && productAdmin.products.length > 0) {
+                // Get the default ProductAdmin (the one without specific products)
+                const defaultProductAdmin = await ProductAdmin.findOne({ mobileNumber: '1234567891' }); // Replace with actual default number if necessary
+                if (!defaultProductAdmin) {
+                    return res.status(404).json({ message: "Default Product Admin not found" });
+                }
+
+                // Move products to the default ProductAdmin
+                const productsToMove = productAdmin.products;
+                await Product.updateMany(
+                    { _id: { $in: productsToMove } },
+                    { $set: { productAdmin: defaultProductAdmin._id } }
+                );
+
+                // Remove products from the current ProductAdmin
+                await ProductAdmin.findByIdAndUpdate(productAdmin._id, {
+                    $pull: { products: { $in: productsToMove } }
+                });
+
+                // Add products to the default ProductAdmin
+                await ProductAdmin.findByIdAndUpdate(defaultProductAdmin._id, {
+                    $push: { products: { $each: productsToMove } }
+                });
+            }
+
+            // Delete the ProductAdmin after transferring the products (if any)
             await ProductAdmin.findByIdAndDelete(id);
+
             return res.status(200).json({ message: "Product Admin deleted successfully" });
         }
+
         return res.status(400).json({ message: "Invalid type provided" });
 
     } catch (error) {
@@ -215,7 +293,6 @@ const deleteAdmin = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
-
 
 
 // Controller function to get users
@@ -438,23 +515,6 @@ const updateAdmin = async (req, res) => {
 };
 
 
-const checkSaleManagers = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const saleAdmin = await SaleAdmin.findById(id).populate('saleManager');
-        const allSaleAdmin = await SaleAdmin.find({type: 'SaleAdmin'});
-        if (!saleAdmin) {
-            return res.status(404).json({ message: "Sale Admin not found" });
-        }
-
-        return res.status(200).json({ message: "Sale Managers found", saleManagers: saleAdmin.saleManager, saleAdmins: allSaleAdmin.filter((admin)=>admin.id !==id) });
-    } catch (error) {
-        console.error("Error fetching sale managers:", error);
-        return res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-};
-
 const checkProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -572,4 +632,4 @@ const updateSaleAdmin = async (req, res) => {
   
 
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin,updateAdmin,checkSaleManagers,checkProduct,updateSaleAdmin };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin,updateAdmin,checkProduct,updateSaleAdmin };

@@ -22,7 +22,7 @@ const saleManagerSchema = new mongoose.Schema({
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
      },
-     UserWithKyc: [{ type: mongoose.Schema.Types.ObjectId, ref: "SaleManager" }], // Array of SaleManager IDs
+     customers: [{ type: mongoose.Schema.Types.ObjectId, ref: "commonUsers" }], // Array of SaleManager IDs
      createdAt: {
         type: Date,
         default: Date.now,

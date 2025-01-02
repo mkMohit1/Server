@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');  // Import multer for file handling
 const path = require('path');     // Import path to manage file paths
-const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkSaleManagers, checkProduct, updateSaleAdmin } = require('../controllers/auth_controller');
+const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkProduct, updateSaleAdmin } = require('../controllers/auth_controller');
 const { addBlog, Blogs, fetchBlog, searchBlogs, CoverTopBlog } = require('../controllers/blog_controller');
 const { fetchProduct, addProduct, deleteProduct, fetchAllProduct, updateProduct } = require('../controllers/product_controller');
 const { addContact } = require('../controllers/contact_controller');
+const { addUserAddress } = require('../controllers/customer_controller');
 
 // Multer configuration to handle file uploads
 const storage = multer.diskStorage({
@@ -43,8 +44,11 @@ router.route('/admin/getAdmins/:mobileNumber').get(fetchAdmin);
 router.route('/admin/deleteAdmin/:type/:id').delete(deleteAdmin);
 router.route('/admin/updateAdmin/:id').put(updateAdmin);
 router.route('/admin/checkProduct/:id').get(checkProduct);
-router.route('/admin/checkSaleManagers/:id').get(checkSaleManagers);
 router.route('/admin/updateSaleAdmin').post(updateSaleAdmin);
+router.route('/admin/addNewUser').post(addUserAddress);
+// end of Admin routes
+
+
 
 // Product routes
 router.route('/admin/addProduct')

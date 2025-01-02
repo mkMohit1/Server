@@ -22,6 +22,7 @@ const commonUserSchema = new mongoose.Schema({
     default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
  },
   contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contact" }], // Array of Contact IDs
+  addresses: { type: mongoose.Schema.Types.ObjectId, ref: "Address" }, // Array of Address IDs
 });
 
 // let add commonUserSchema to the User collection database
