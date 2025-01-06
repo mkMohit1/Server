@@ -335,9 +335,9 @@ const users = async (req, res) => {
             console.log("Default admins created and linked to SupperAdmin successfully.");
 
         }
-        res.status(200).json(users);
+        return res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: "Error fetching users" });
+        return res.status(500).json({ message: "Error fetching users" });
     }
 };
 
@@ -359,7 +359,7 @@ const singleUser = async (req, res) => {
 // Controller function to send OTP
 const sendOtp = async (req, res) => {
     try {
-        const { mobileNumber, otp, type } = req.body;
+        const { mobileNumber, otp, type, newUser } = req.body;
         console.log(req.body);
 
         // Validation: Check if mobileNumber, otp, and type are provided
@@ -374,7 +374,7 @@ const sendOtp = async (req, res) => {
         console.log(fetchedUserAdmin);
 
         // Check if the user exists
-        if (!fetchedUserAdmin && mobileNumber !== mobile) {
+        if (!fetchedUserAdmin && mobileNumber !== mobile && !newUser) {
             return res.status(404).json({ message: "User not found" });
         }
 
@@ -389,7 +389,7 @@ const sendOtp = async (req, res) => {
             return res.status(200).json({fetchedUserProductAdmin});
         }
         // If any user is found, proceed to send OTP
-        if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin) {
+        if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin || newUser) {
             // OTP sending logic based on 'type'
             if (type === 'whatsapp') { // WhatsApp OTP
                 const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
@@ -426,7 +426,7 @@ const sendOtp = async (req, res) => {
                         message: "Failed to send WhatsApp OTP",
                         error: error.response ? error.response.data : error.message,
                     });
-                }
+                }   
             } else if (type === 'voice') { // Voice OTP
                 console.log(process.env.SOLUTIONS_INFINI_API_URL);
                 try {
