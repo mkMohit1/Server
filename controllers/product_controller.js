@@ -49,13 +49,13 @@ const fetchAllProduct = async (req, res) => {
 
 // Add a new product
 const addProduct = async (req, res) => {
-    // console.log("Body:", req.body);
+   console.log("Body:", req.body);
     // console.log("File:", req.file);
     try {
-        const { title, slug, description, mrp, category, status, discount, userID } = req.body;
+        const { title, subTitle, description, mrp,inventory,productUsp, category, status, discount, userID } = req.body;
 
         // Validate required fields
-        if (!title || !slug || !description || !mrp || !category || !status || !discount || !userID) {
+        if (!title || !subTitle || !inventory || !productUsp || !description || !mrp || !category || !status || !discount || !userID) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -71,9 +71,11 @@ const addProduct = async (req, res) => {
         //console.log("new",imagePath);
         const newProduct = new Product({
             title, 
-            slug, 
+            subTitle, 
             description, 
-            mrp, 
+            mrp,
+            inventory,
+            productUsp, 
             category, 
             status, 
             discount, 

@@ -5,7 +5,7 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    slug:{
+    subTitle:{
         type: String,
         required: true,
     },
@@ -13,6 +13,11 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true,
         default: 0,
+    },
+    inventory:{
+        type: Number,
+        required: true,
+        default:0
     },
     rentQuantity: {
         type: Number,
@@ -33,6 +38,10 @@ const productSchema = new mongoose.Schema({
         required: true,
     },
     description: {
+        type: String,
+        required: true,
+    },
+    productUsp:{
         type: String,
         required: true,
     },
