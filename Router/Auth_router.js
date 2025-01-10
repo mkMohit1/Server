@@ -3,8 +3,9 @@ const router = express.Router();
 const multer = require('multer');  // Import multer for file handling
 const path = require('path');     // Import path to manage file paths
 const passportSetup = require('../config/passport'); // Make sure this is the correct import path
+const crypto = require('crypto');
 
-const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkProduct, updateSaleAdmin } = require('../controllers/auth_controller');
+const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkProduct, updateSaleAdmin, addCommonUser } = require('../controllers/auth_controller');
 const { addBlog, Blogs, fetchBlog, searchBlogs, CoverTopBlog } = require('../controllers/blog_controller');
 const { fetchProduct, addProduct, deleteProduct, fetchAllProduct, updateProduct } = require('../controllers/product_controller');
 const { addContact } = require('../controllers/contact_controller');
@@ -48,6 +49,7 @@ router.route('/admin/updateAdmin/:id').put(updateAdmin);
 router.route('/admin/checkProduct/:id').get(checkProduct);
 router.route('/admin/updateSaleAdmin').post(updateSaleAdmin);
 router.route('/admin/addNewUser').post(addUserAddress);
+router.route('/add/newUser').post(addCommonUser);
 // end of Admin routes
 
 
@@ -61,16 +63,45 @@ router.route('/products/allproducts').get(fetchAllProduct);
 router.route('/admin/updateProduct/:id').put(upload.single('productImage'),updateProduct);
 
 
+// Generate a 32-byte key
+const secretKey = crypto.createHash('sha256').update('manish-secret-key').digest(); // 32-byte key
+const iv = crypto.randomBytes(16); // Generate 16-byte IV
+
+function encryptData(data) {
+  const cipher = crypto.createCipheriv('aes-256-cbc', secretKey, iv);
+  let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return {
+    iv: iv.toString('hex'),
+    encryptedData: encrypted,
+  };
+}
+
+// Example usage
+router.route('/auth/google/callback').get(passportSetup.authenticate('google'), (req, res) => {
+  const userData = req.user;
+  const encrypted = encryptData(userData);
+
+  console.log('Encrypted Data:', encrypted.encryptedData);
+  console.log('IV:', encrypted.iv);
+  console.log('Secret Key (Hex):', secretKey.toString('hex'));
+
+  res.redirect(`http://localhost:3000?user=${encodeURIComponent(encrypted.encryptedData)}&iv=${encodeURIComponent(encrypted.iv)}`);
+});
+
 // for google authentication
 router.route('/auth/google').get(passportSetup.authenticate('google', {
   scope: ['profile', 'email']
 }));
-router.route('/auth/google/callback').get(passportSetup.authenticate('google'), (req, res) => {
-  //get the user data
-  console.log(req.user);
 
- // Redirect to the frontend with user information in a query parameter
-  res.redirect(`http://localhost:3000?user=${JSON.stringify(req.user)}`);
+// Logout route
+router.route('/auth/logout').get((req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).send("Error logging out");
+    }
+    res.status('200').json({message:"Loggin out"});  // Redirect to homepage or a desired page after logout
+  });
 });
 
 

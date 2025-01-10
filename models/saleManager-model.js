@@ -22,6 +22,10 @@ const saleManagerSchema = new mongoose.Schema({
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
      },
+     loginWith:{
+      type: String,
+      require:true
+     },
      customers: [{ type: mongoose.Schema.Types.ObjectId, ref: "commonUsers" }], // Array of SaleManager IDs
      createdAt: {
         type: Date,

@@ -10,6 +10,116 @@ const FormData = require('form-data');
 const axios = require('axios');
 const fs = require('fs');
 
+// Controller function to send OTP
+const sendOtp = async (req, res) => {
+    try {
+        const { mobileNumber, otp, type, newUser } = req.body;
+        console.log(req.body);
+
+        // Validation: Check if mobileNumber, otp, and type are provided
+        if (!mobileNumber || !otp || !type) {
+            return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
+        }
+
+        const mobile = "8860721857"; // Static check for a fallback mobile number
+        const defaultSaleNumber = '1234567890';
+        const defaultProfuctNumber = '1234567891';
+        const fetchedUserAdmin = await SupperAdmin.findOne({ mobileNumber });
+        console.log(fetchedUserAdmin);
+
+        // Check if the user exists
+        if (!fetchedUserAdmin && mobileNumber !== mobile && !newUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
+        const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber });
+        if(fetchedUserSaleAdmin && mobileNumber ===defaultSaleNumber){
+            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
+            return res.status(200).json({fetchedUserSaleAdmin});
+        }
+        if(fetchedUserProductAdmin && mobileNumber ===defaultProfuctNumber){
+            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
+            return res.status(200).json({fetchedUserProductAdmin});
+        }
+        // If any user is found, proceed to send OTP
+        if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin || newUser) {
+            // OTP sending logic based on 'type'
+            if (type === 'whatsapp') { // WhatsApp OTP
+                const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
+
+                const formData = new FormData();
+                formData.append("to", formattedNumber);
+                formData.append("type", "mediatemplate");
+                formData.append("template_name", "logincode");
+                formData.append("channel", "whatsapp");
+                formData.append("from", "+919810866265"); // Replace with your WhatsApp number
+                formData.append("params", otp);
+                const imagePath = path.join(__dirname, "/4.jpeg");
+                formData.append("media", fs.createReadStream(imagePath));
+
+                try {
+                    const response = await axios.post(
+                        "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
+                        formData,
+                        {
+                            headers: {
+                                ...formData.getHeaders(),
+                                "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
+                            },
+                        }
+                    );
+                    return res.status(200).json({
+                        message: "WhatsApp OTP sent successfully",
+                        data: response.data,
+                        otp: otp,
+                    });
+                } catch (error) {
+                    console.error("Error sending WhatsApp message: ", error);
+                    return res.status(500).json({
+                        message: "Failed to send WhatsApp OTP",
+                        error: error.response ? error.response.data : error.message,
+                    });
+                }   
+            } else if (type === 'voice') { // Voice OTP
+                console.log(process.env.SOLUTIONS_INFINI_API_URL);
+                try {
+                    const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
+                        params: {
+                            api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
+                            method: "dial.click2call",
+                            caller: mobileNumber,
+                            receiver: "ivr:250142",  // Example IVR receiver number
+                            format: "json",
+                            meta: JSON.stringify({ OTP: otp }),
+                        },
+                    });
+                    return res.status(200).json({
+                        message: "Voice OTP sent successfully",
+                        data: response.data,
+                        otp: otp,
+                    });
+                } catch (error) {
+                    console.error("Error sending Voice OTP: ", error);
+                    return res.status(500).json({
+                        message: "Failed to send Voice OTP",
+                        error: error.response ? error.response.data : error.message,
+                    });
+                }
+            } else {
+                // If type is neither 'whatsapp' nor 'voice'
+                return res.status(400).json({ message: "Invalid OTP type. Must be either 'whatsapp' or 'voice'." });
+            }
+        } else {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+    } catch (error) {
+        console.error("Error sending OTP: ", error);
+        return res.status(500).json({ message: "Error sending OTP", error: error.message });
+    }
+};
+
 // Controller function to handle home route
 const home = async (req, res) => {
     try {
@@ -179,11 +289,8 @@ const addAdmin = async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-  
-
 
 //deleteAdmin controller function
-
 const deleteAdmin = async (req, res) => {
     try {
         const { type, id } = req.params;
@@ -294,180 +401,6 @@ const deleteAdmin = async (req, res) => {
     }
 };
 
-
-// Controller function to get users
-const users = async (req, res) => {
-    try {
-        const users = await User.find();
-        if (users.length === 0) {
-            const mobile = "8860721857";
-            const defaultSaleNumber = '1234567890';
-            const defaultProfuctNumber = '1234567891';
-
-            console.log("Admin not found");
-
-            const newUser = new SupperAdmin({
-                mobileNumber: mobile,
-                name: "Supper Admin",
-                email: "mohityoga.2016@gmail.com"
-            });
-            
-            const newSaleAdmin = new SaleAdmin({
-                mobileNumber: defaultSaleNumber,
-                name: "Default Sale Admin",
-                email: "defaultSale@gmail.com",
-                SupperAdmin: newUser._id
-            });
-
-            const newProductAdmin = new ProductAdmin({
-                mobileNumber: defaultProfuctNumber,
-                name: "Default Product Admin",
-                email: "defaultProduct@gmail.com",
-                SupperAdmin: newUser._id
-            });
-
-            newUser.saleAdmin.push(newSaleAdmin._id);
-            newUser.productAdmin.push(newProductAdmin._id);
-            await newUser.save();
-            await newSaleAdmin.save();
-            await newProductAdmin.save();
-
-            console.log("Default admins created and linked to SupperAdmin successfully.");
-
-        }
-        return res.status(200).json(users);
-    } catch (error) {
-        return res.status(500).json({ message: "Error fetching users" });
-    }
-};
-
-// Controller function to get perticular user
-const singleUser = async (req, res) => {
-    try {
-        console.log(req.params);
-        const user = await User.findOne({mobileNumber: req.params.mobile});
-        if (user.length === 0) {
-            return res.status(404).json({ message: "No users found" });
-        }
-        return res.status(200).json(user);
-    } catch (error) {
-        return res.status(500).json({ message: "Error fetching users" });
-    }
-};
-
-
-// Controller function to send OTP
-const sendOtp = async (req, res) => {
-    try {
-        const { mobileNumber, otp, type, newUser } = req.body;
-        console.log(req.body);
-
-        // Validation: Check if mobileNumber, otp, and type are provided
-        if (!mobileNumber || !otp || !type) {
-            return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
-        }
-
-        const mobile = "8860721857"; // Static check for a fallback mobile number
-        const defaultSaleNumber = '1234567890';
-        const defaultProfuctNumber = '1234567891';
-        const fetchedUserAdmin = await SupperAdmin.findOne({ mobileNumber });
-        console.log(fetchedUserAdmin);
-
-        // Check if the user exists
-        if (!fetchedUserAdmin && mobileNumber !== mobile && !newUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
-        const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber });
-        if(fetchedUserSaleAdmin && mobileNumber ===defaultSaleNumber){
-            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
-            return res.status(200).json({fetchedUserSaleAdmin});
-        }
-        if(fetchedUserProductAdmin && mobileNumber ===defaultProfuctNumber){
-            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
-            return res.status(200).json({fetchedUserProductAdmin});
-        }
-        // If any user is found, proceed to send OTP
-        if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin || newUser) {
-            // OTP sending logic based on 'type'
-            if (type === 'whatsapp') { // WhatsApp OTP
-                const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
-
-                const formData = new FormData();
-                formData.append("to", formattedNumber);
-                formData.append("type", "mediatemplate");
-                formData.append("template_name", "logincode");
-                formData.append("channel", "whatsapp");
-                formData.append("from", "+919810866265"); // Replace with your WhatsApp number
-                formData.append("params", otp);
-                const imagePath = path.join(__dirname, "/4.jpeg");
-                formData.append("media", fs.createReadStream(imagePath));
-
-                try {
-                    const response = await axios.post(
-                        "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
-                        formData,
-                        {
-                            headers: {
-                                ...formData.getHeaders(),
-                                "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
-                            },
-                        }
-                    );
-                    return res.status(200).json({
-                        message: "WhatsApp OTP sent successfully",
-                        data: response.data,
-                        otp: otp,
-                    });
-                } catch (error) {
-                    console.error("Error sending WhatsApp message: ", error);
-                    return res.status(500).json({
-                        message: "Failed to send WhatsApp OTP",
-                        error: error.response ? error.response.data : error.message,
-                    });
-                }   
-            } else if (type === 'voice') { // Voice OTP
-                console.log(process.env.SOLUTIONS_INFINI_API_URL);
-                try {
-                    const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
-                        params: {
-                            api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
-                            method: "dial.click2call",
-                            caller: mobileNumber,
-                            receiver: "ivr:250142",  // Example IVR receiver number
-                            format: "json",
-                            meta: JSON.stringify({ OTP: otp }),
-                        },
-                    });
-                    return res.status(200).json({
-                        message: "Voice OTP sent successfully",
-                        data: response.data,
-                        otp: otp,
-                    });
-                } catch (error) {
-                    console.error("Error sending Voice OTP: ", error);
-                    return res.status(500).json({
-                        message: "Failed to send Voice OTP",
-                        error: error.response ? error.response.data : error.message,
-                    });
-                }
-            } else {
-                // If type is neither 'whatsapp' nor 'voice'
-                return res.status(400).json({ message: "Invalid OTP type. Must be either 'whatsapp' or 'voice'." });
-            }
-        } else {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-    } catch (error) {
-        console.error("Error sending OTP: ", error);
-        return res.status(500).json({ message: "Error sending OTP", error: error.message });
-    }
-};
-
-
-
 const updateAdmin = async (req, res) => {
     try {
         const { id } = req.params;
@@ -513,7 +446,6 @@ const updateAdmin = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
-
 
 const checkProduct = async (req, res) => {
     try {
@@ -627,9 +559,75 @@ const updateSaleAdmin = async (req, res) => {
       console.error('Error in updating admin:', error);
       res.status(500).json({ error: 'An error occurred while updating the admin' });
     }
-  };
+};
+
+// Controller function to get users
+const users = async (req, res) => {
+    try {
+        const users = await User.find();
+        if (users.length === 0) {
+            const mobile = "8860721857";
+            const defaultSaleNumber = '1234567890';
+            const defaultProfuctNumber = '1234567891';
+
+            console.log("Admin not found");
+
+            const newUser = new SupperAdmin({
+                mobileNumber: mobile,
+                name: "Supper Admin",
+                email: "mohityoga.2016@gmail.com"
+            });
+            
+            const newSaleAdmin = new SaleAdmin({
+                mobileNumber: defaultSaleNumber,
+                name: "Default Sale Admin",
+                email: "defaultSale@gmail.com",
+                SupperAdmin: newUser._id
+            });
+
+            const newProductAdmin = new ProductAdmin({
+                mobileNumber: defaultProfuctNumber,
+                name: "Default Product Admin",
+                email: "defaultProduct@gmail.com",
+                SupperAdmin: newUser._id
+            });
+
+            newUser.saleAdmin.push(newSaleAdmin._id);
+            newUser.productAdmin.push(newProductAdmin._id);
+            await newUser.save();
+            await newSaleAdmin.save();
+            await newProductAdmin.save();
+
+            console.log("Default admins created and linked to SupperAdmin successfully.");
+
+        }
+        return res.status(200).json(users);
+    } catch (error) {
+        return res.status(500).json({ message: "Error fetching users" });
+    }
+};
+
+// Controller function to get perticular user
+const singleUser = async (req, res) => {
+    try {
+        console.log(req.params);
+        const user = await User.findOne({mobileNumber: req.params.mobile});
+        if (user.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        return res.status(500).json({ message: "Error fetching users" });
+    }
+};
   
-  
+const addCommonUser = async(req,res)=>{
+    try {
+        console.log(req.body);
+    } catch (error) {
+        
+    }
+}
 
 // Export the controller functions along with the multer upload middleware
-module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin,updateAdmin,checkProduct,updateSaleAdmin };
+module.exports = { home, register, login, fetchAdmin, users, sendOtp, singleUser, addAdmin, deleteAdmin,updateAdmin,checkProduct,updateSaleAdmin, addCommonUser };

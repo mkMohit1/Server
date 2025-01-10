@@ -21,6 +21,10 @@ const supperAdminSchema = new mongoose.Schema({
         type: String,
         default:'https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
      },
+     loginWith:{
+      type: String,
+      require:true
+     },
      saleAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: "SaleAdmin" }], // Array of SaleAdmin IDs
      productAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: "ProductAdmin" }], // Array of ProductAdmin IDs
      createdAt: {
