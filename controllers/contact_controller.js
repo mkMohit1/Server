@@ -1,6 +1,7 @@
 const Contact = require('../models/contact-model');
 const User = require('../models/commonUser-model'); // Import User model
 const nodemailer = require('nodemailer');
+const { login } = require('./auth_controller');
 
 // Create a transporter for sending emails
 const transporter = nodemailer.createTransport({
@@ -14,10 +15,13 @@ const transporter = nodemailer.createTransport({
 // Controller function to add the contact
 const addContact = async (req, res) => {
   try {
-    const { mobile, email, message, name } = req.body;
+const { mobile, email, message, name, type } = req.body;
 
-    // Find the user by mobile number
-    const contactAddInUser = await User.findOne({ mobileNumber: mobile });
+// Determine the query criteria based on available data
+const query = mobile ? { mobileNumber: mobile } : { loginWith: type };
+
+// Find the user by the determined criteria
+const contactAddInUser = await User.findOne(query);
     if (!contactAddInUser) {
       return res.status(404).json({ success: false, message: "User not found." });
     }
@@ -54,6 +58,14 @@ const addContact = async (req, res) => {
 
     // Save the updated user document
     await contactAddInUser.save();
+
+     // Emit real-time notification to super admin
+      if (global.superAdminSocket) {
+        global.superAdminSocket.emit('newContactNotification', {
+          message: `New contact form submitted by ${name}`,
+          data: newContact,
+        });
+      }
 
     // Send a successful response
     res.status(201).json({

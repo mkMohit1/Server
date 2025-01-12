@@ -213,7 +213,7 @@ const fetchAdmin = async (req, res) => {
 const addAdmin = async (req, res) => {
     try {
       console.log(req.body);
-      const { mobileNumber, name, email, type, supperAdminID } = req.body;
+      const { mobileNumber, name, email, type, supperAdminID, loginWith } = req.body;
   
       // Check if the mobile number is already registered
       const allUser = await User.find({ mobileNumber });
@@ -242,8 +242,8 @@ const addAdmin = async (req, res) => {
         }
   
         const newUser = type === 'SaleAdmin'
-          ? new SaleAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id })
-          : new ProductAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id });
+          ? new SaleAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id, loginWith:loginWith })
+          : new ProductAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id , loginWith:loginWith});
   
         await newUser.save();
   
@@ -272,7 +272,7 @@ const addAdmin = async (req, res) => {
         }
   
         const newSaleManager = new SaleManager({
-          mobileNumber, name, email, type, SaleAdmin: supperAdminID
+          mobileNumber, name, email, type, SaleAdmin: supperAdminID, loginWith:loginWith
         });
   
         await newSaleManager.save();
@@ -601,6 +601,7 @@ const users = async (req, res) => {
             console.log("Default admins created and linked to SupperAdmin successfully.");
 
         }
+        console.log(users);
         return res.status(200).json(users);
     } catch (error) {
         return res.status(500).json({ message: "Error fetching users" });
