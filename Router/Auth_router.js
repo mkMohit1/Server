@@ -5,7 +5,7 @@ const path = require('path');     // Import path to manage file paths
 const passportSetup = require('../config/passport'); // Make sure this is the correct import path
 const crypto = require('crypto');
 
-const { register, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkProduct, updateSaleAdmin, addCommonUser } = require('../controllers/auth_controller');
+const { register, login, users, singleUser, sendOtp, addAdmin, fetchAdmin, deleteAdmin, updateAdmin, checkProduct, updateSaleAdmin, addCommonUser } = require('../controllers/auth_controller');
 const { addBlog, Blogs, fetchBlog, searchBlogs, CoverTopBlog } = require('../controllers/blog_controller');
 const { fetchProduct, addProduct, deleteProduct, fetchAllProduct, updateProduct } = require('../controllers/product_controller');
 const { addContact } = require('../controllers/contact_controller');
@@ -28,6 +28,8 @@ router.route('/register').post(register);
 router.route('/users').get(users);
 router.route('/user/:mobile').get(singleUser);
 router.route('/send-otp').post(sendOtp);
+router.route('/register/verify').post(register);
+router.route('/login').post(login);
 
 // Blog router
 router.route('/BlogPost')

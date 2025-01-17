@@ -1,162 +1,251 @@
-const User = require("../models/commonUser-model");
-const SupperAdmin = require("../models/supperAdmin-model");
-const SaleAdmin = require("../models/saleAdmin-model");
-const SaleManager = require("../models/saleManager-model");
-const ProductAdmin = require("../models/productAdmin-model");
+const User = require('../models/User');
 const Product = require('../models/Product-model');
 const Address = require('../models/Address-model');
 const path = require('path');
 const FormData = require('form-data');
 const axios = require('axios');
 const fs = require('fs');
+// const redis = require('redis');
+const redisClient  = require('../Server'); // Adjust the path to `server.js`
+console.log("vddsfdsbjfj", redisClient);
 
-// Controller function to send OTP
-const sendOtp = async (req, res) => {
-    try {
-        const { mobileNumber, otp, type, newUser } = req.body;
-        console.log(req.body);
-
-        // Validation: Check if mobileNumber, otp, and type are provided
-        if (!mobileNumber || !otp || !type) {
-            return res.status(400).json({ message: "Mobile number, OTP, and type are required." });
-        }
-
-        const mobile = "8860721857"; // Static check for a fallback mobile number
-        const defaultSaleNumber = '1234567890';
-        const defaultProfuctNumber = '1234567891';
-        const fetchedUserAdmin = await SupperAdmin.findOne({ mobileNumber });
-        console.log(fetchedUserAdmin);
-
-        // Check if the user exists
-        if (!fetchedUserAdmin && mobileNumber !== mobile && !newUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        const fetchedUserSaleAdmin = await SaleAdmin.findOne({ mobileNumber });
-        const fetchedUserProductAdmin = await ProductAdmin.findOne({ mobileNumber });
-        if(fetchedUserSaleAdmin && mobileNumber ===defaultSaleNumber){
-            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
-            return res.status(200).json({fetchedUserSaleAdmin});
-        }
-        if(fetchedUserProductAdmin && mobileNumber ===defaultProfuctNumber){
-            console.log(`mobile number: ${mobileNumber} and it's otp: ${otp}`);
-            return res.status(200).json({fetchedUserProductAdmin});
-        }
-        // If any user is found, proceed to send OTP
-        if (fetchedUserAdmin || fetchedUserSaleAdmin || fetchedUserProductAdmin || newUser) {
-            // OTP sending logic based on 'type'
-            if (type === 'whatsapp') { // WhatsApp OTP
-                const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
-
-                const formData = new FormData();
-                formData.append("to", formattedNumber);
-                formData.append("type", "mediatemplate");
-                formData.append("template_name", "logincode");
-                formData.append("channel", "whatsapp");
-                formData.append("from", "+919810866265"); // Replace with your WhatsApp number
-                formData.append("params", otp);
-                const imagePath = path.join(__dirname, "/4.jpeg");
-                formData.append("media", fs.createReadStream(imagePath));
-
-                try {
-                    const response = await axios.post(
-                        "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
-                        formData,
-                        {
-                            headers: {
-                                ...formData.getHeaders(),
-                                "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
-                            },
-                        }
-                    );
-                    return res.status(200).json({
-                        message: "WhatsApp OTP sent successfully",
-                        data: response.data,
-                        otp: otp,
-                    });
-                } catch (error) {
-                    console.error("Error sending WhatsApp message: ", error);
-                    return res.status(500).json({
-                        message: "Failed to send WhatsApp OTP",
-                        error: error.response ? error.response.data : error.message,
-                    });
-                }   
-            } else if (type === 'voice') { // Voice OTP
-                console.log(process.env.SOLUTIONS_INFINI_API_URL);
-                try {
-                    const response = await axios.get(`${process.env.SOLUTIONS_INFINI_API_URL}`, {
-                        params: {
-                            api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
-                            method: "dial.click2call",
-                            caller: mobileNumber,
-                            receiver: "ivr:250142",  // Example IVR receiver number
-                            format: "json",
-                            meta: JSON.stringify({ OTP: otp }),
-                        },
-                    });
-                    return res.status(200).json({
-                        message: "Voice OTP sent successfully",
-                        data: response.data,
-                        otp: otp,
-                    });
-                } catch (error) {
-                    console.error("Error sending Voice OTP: ", error);
-                    return res.status(500).json({
-                        message: "Failed to send Voice OTP",
-                        error: error.response ? error.response.data : error.message,
-                    });
-                }
-            } else {
-                // If type is neither 'whatsapp' nor 'voice'
-                return res.status(400).json({ message: "Invalid OTP type. Must be either 'whatsapp' or 'voice'." });
-            }
-        } else {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-    } catch (error) {
-        console.error("Error sending OTP: ", error);
-        return res.status(500).json({ message: "Error sending OTP", error: error.message });
-    }
+// Fallback for OTP generation
+const generateOtp = () => {
+    return Math.floor(1000 + Math.random() * 9000); // Generates a 4-digit OTP
 };
 
 // Controller function to handle home route
 const home = async (req, res) => {
     try {
-        res.status(200).send("Welcome to the auth router!");
+        res.status(200).json({
+            message: "Auth router is live!",
+            version: "1.0.0",
+            timestamp: new Date().toISOString(),
+        });
     } catch (error) {
-        console.log("Error:", error);
+        console.error("Error in home route:", error);
+        res.status(500).json({ message: "Server error" });
     }
 };
+
+// Controller function to send OTP
+const sendOtp = async (req, res) => {
+    try {
+      const { mobileNumber,  type, newUser } = req.body;
+        console.log(req.body);
+        /// Validate input
+        if (!mobileNumber || !type) {
+            return res.status(400).json({ message: "Mobile number and type are required." });
+        }
+        if (!/^\d{10}$/.test(mobileNumber)) {
+            return res.status(400).json({ message: "Invalid mobile number format." });
+        }
+    
+        // Check if user already exists
+        const userExists = await User.findOne({ mobileNumber });
+        if (!newUser && !userExists) {
+            return res.status(404).json({ message: "User not found. Please register first." });
+        }
+
+        if (!redisClient.isOpen) {
+            console.error("Redis client is not connected");
+            return res.status(500).json({ message: "Redis client is not connected." });
+        }
+        // // Rate limiting: Max 3 OTP requests in 10 minutes
+        // const rateLimitKey = `rate:${mobileNumber}`;
+        // const requestCount = await redisClient.incr(rateLimitKey);
+
+        // if (requestCount === 1) {
+        // await redisClient.expire(rateLimitKey, 600); // Set expiration for rate limit (10 minutes)
+        // } else if (requestCount > 3) {
+        // return res.status(429).json({ message: "Too many OTP requests. Try again later." });
+        // }
+
+        // Generate a secure OTP
+        const otp = generateOtp(); // 4-digit OTP
+        const otpKey = `otp:${mobileNumber}`;
+        await redisClient.setEx(otpKey, ttl, JSON.stringify({ otp, newUser }));
+  
+      // OTP sending logic
+      if (type === 'whatsapp') {
+        // WhatsApp OTP sending logic
+        const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
+        const formData = new FormData();
+        formData.append("to", formattedNumber);
+        formData.append("type", "mediatemplate");
+        formData.append("template_name", "logincode");
+        formData.append("channel", "whatsapp");
+        formData.append("from", "+919810866265"); // Replace with your WhatsApp number
+        formData.append("params", otp);
+        const imagePath = path.join(__dirname, "/4.jpeg");
+        formData.append("media", fs.createReadStream(imagePath));
+  
+        try {
+          const response = await axios.post(
+            "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
+            formData,
+            {
+              headers: {
+                ...formData.getHeaders(),
+                "api-key": process.env.KALEYRA_API_KEY, // Use your API key
+              },
+            }
+          );
+          return res.status(200).json({
+            message: "WhatsApp OTP sent successfully.",
+            otp,
+            data: response.data,
+          });
+        } catch (error) {
+          console.error("Error sending WhatsApp OTP:", error);
+          return res.status(500).json({
+            message: "Failed to send WhatsApp OTP.",
+            error: error.response ? error.response.data : error.message,
+          });
+        }
+      } else if (type === 'voice') {
+        // Voice OTP sending logic
+        try {
+          const response = await axios.get(process.env.SOLUTIONS_INFINI_API_URL, {
+            params: {
+              api_key: process.env.SOLUTIONS_INFINI_API_KEY, // Ensure this is set in your environment variables
+              method: "dial.click2call",
+              caller: mobileNumber,
+              receiver: "ivr:250142", // Example IVR receiver number
+              format: "json",
+              meta: JSON.stringify({ OTP: otp }),
+            },
+          });
+          return res.status(200).json({
+            message: "Voice OTP sent successfully.",
+            otp,
+            data: response.data,
+          });
+        } catch (error) {
+          console.error("Error sending Voice OTP:", error);
+          return res.status(500).json({
+            message: "Failed to send Voice OTP.",
+            error: error.response ? error.response.data : error.message,
+          });
+        }
+      } else {
+        return res.status(400).json({ message: "Invalid OTP type. Must be 'whatsapp' or 'voice'." });
+      }
+    } catch (error) {
+      console.error("Error in sendOtp:", error);
+      return res.status(500).json({ message: "Error sending OTP.", error: error.message });
+    }
+};
+
 
 // Controller function to handle user registration
 const register = async (req, res) => {
     try {
-        const { userName, mobileNumber } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ mobileNumber });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        const newUser = new User({ userName, mobileNumber });
-        await newUser.save();
-        return res.status(201).json({ message: "User registered successfully" });
+      const { mobileNumber, enteredOtp } = req.body;
+  
+      // Validate input
+      if (!mobileNumber || !enteredOtp) {
+        return res.status(400).json({ message: "Mobile number and OTP are required." });
+      }
+  
+      // Fetch the OTP and newUser flag from Redis
+      const otpKey = `otp:${mobileNumber}`;
+      const data = await redisClient.get(otpKey);
+  
+      if (!data) {
+        return res.status(404).json({ message: "OTP expired or not found. Please request a new OTP." });
+      }
+  
+      const { otp, newUser } = JSON.parse(data);
+  
+      // Validate OTP
+      if (otp !== parseInt(enteredOtp, 10)) {
+        return res.status(400).json({ message: "Invalid OTP. Please try again." });
+      }
+  
+      // Ensure this is a registration request
+      if (!newUser) {
+        return res.status(400).json({ message: "Invalid registration request." });
+      }
+  
+      // Check if the user already exists
+      const existingUser = await User.findOne({ mobileNumber });
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists. Please login." });
+      }
+  
+      // Create the new user
+      const user = new User({
+        mobileNumber,
+        role: 'CommonUser', // Default role for new users
+      });
+      await user.save();
+  
+      // Delete the OTP from Redis
+      await redisClient.del(otpKey);
+  
+      // Return the newly created user
+      return res.status(201).json({
+        message: "User registered successfully.",
+        user: {
+          id: user._id,
+          mobileNumber: user.mobileNumber,
+          role: user.role,
+        },
+      });
     } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error" });
+      console.error("Error in register:", error);
+      return res.status(500).json({ message: "Internal server error.", error: error.message });
     }
-};
+  };
 
 // Controller function for user login
 const login = async (req, res) => {
     try {
-        console.log(req.body);
-        return res.status(200).json(req.body);
+      const { mobileNumber, enteredOtp } = req.body;
+  
+      // Validate input
+      if (!mobileNumber || !enteredOtp) {
+        return res.status(400).json({ message: "Mobile number and OTP are required." });
+      }
+  
+      const otpKey = `otp:${mobileNumber}`;
+      const storedOtp = await redisClient.get(otpKey);
+  
+      // Check if OTP exists
+      if (!storedOtp) {
+        return res.status(404).json({ message: "OTP expired or not found. Please request a new OTP." });
+      }
+  
+      // Validate OTP
+      if (storedOtp !== enteredOtp) {
+        return res.status(400).json({ message: "Invalid OTP. Please try again." });
+      }
+  
+      // OTP is valid; delete it from Redis
+      await redisClient.del(otpKey);
+  
+      // Check if user exists
+      const user = await User.findOne({ mobileNumber });
+      if (!user) {
+        return res.status(404).json({ message: "User not found. Please register first." });
+      }
+  
+      // Successful login
+      return res.status(200).json({
+        message: "Login successful!",
+        user: {
+          id: user._id,
+          mobileNumber: user.mobileNumber,
+          role: user.role,
+        },
+      });
     } catch (error) {
-        return res.status(400).json("Internal Server Error");
+      console.error("Error in login:", error);
+      return res.status(500).json({ message: "Internal server error.", error: error.message });
     }
-};
+  };
+
 
 // fetchAdmin controller function
 const fetchAdmin = async (req, res) => {
