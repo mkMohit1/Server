@@ -51,8 +51,9 @@ router.route('/admin/updateAdmin/:id').put(updateAdmin);
 router.route('/admin/checkProduct/:id').get(checkProduct);
 router.route('/admin/updateSaleAdmin').post(updateSaleAdmin);
 router.route('/admin/addNewUser').post(addUserAddress);
-router.route('/add/newUser').post(addCommonUser);
+// router.route('/add/newUser').post(addCommonUser);
 // end of Admin routes
+
 
 
 
@@ -102,7 +103,7 @@ router.route('/auth/logout').get((req, res) => {
     if (err) {
       return res.status(500).send("Error logging out");
     }
-    res.status('200').json({message:"Loggin out"});  // Redirect to homepage or a desired page after logout
+    res.status('200').json({message:"Logging out"});  // Redirect to homepage or a desired page after logout
   });
 });
 

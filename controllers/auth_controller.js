@@ -5,14 +5,11 @@ const path = require('path');
 const FormData = require('form-data');
 const axios = require('axios');
 const fs = require('fs');
-// const redis = require('redis');
-const redisClient  = require('../Server'); // Adjust the path to `server.js`
-console.log("vddsfdsbjfj", redisClient);
+// // const redis = require('redis');
+// const redisClient  = require('../Server'); // Adjust the path to `server.js`
+// console.log("vddsfdsbjfj", redisClient);
 
-// Fallback for OTP generation
-const generateOtp = () => {
-    return Math.floor(1000 + Math.random() * 9000); // Generates a 4-digit OTP
-};
+
 
 // Controller function to handle home route
 const home = async (req, res) => {
@@ -31,7 +28,7 @@ const home = async (req, res) => {
 // Controller function to send OTP
 const sendOtp = async (req, res) => {
     try {
-      const { mobileNumber,  type, newUser } = req.body;
+      const { mobileNumber,  type, newUser ,otp} = req.body;
         console.log(req.body);
         /// Validate input
         if (!mobileNumber || !type) {
@@ -47,10 +44,10 @@ const sendOtp = async (req, res) => {
             return res.status(404).json({ message: "User not found. Please register first." });
         }
 
-        if (!redisClient.isOpen) {
-            console.error("Redis client is not connected");
-            return res.status(500).json({ message: "Redis client is not connected." });
-        }
+        // if (!redisClient.isOpen) {
+        //     console.error("Redis client is not connected");
+        //     return res.status(500).json({ message: "Redis client is not connected." });
+        // }
         // // Rate limiting: Max 3 OTP requests in 10 minutes
         // const rateLimitKey = `rate:${mobileNumber}`;
         // const requestCount = await redisClient.incr(rateLimitKey);
@@ -62,14 +59,14 @@ const sendOtp = async (req, res) => {
         // }
 
         // Generate a secure OTP
-        const otp = generateOtp(); // 4-digit OTP
-        const otpKey = `otp:${mobileNumber}`;
-        await redisClient.setEx(otpKey, ttl, JSON.stringify({ otp, newUser }));
+        // const otp = generateOtp(); // 4-digit OTP
+        // const otpKey = `otp:${mobileNumber}`;
+        // await redisClient.setEx(otpKey, ttl, JSON.stringify({ otp, newUser }));
   
       // OTP sending logic
-      if (type === 'whatsapp') {
-        // WhatsApp OTP sending logic
+      if (type === 'whatsapp') { // WhatsApp OTP
         const formattedNumber = `+91${mobileNumber}`; // Assuming mobileNumber is a 10-digit number
+
         const formData = new FormData();
         formData.append("to", formattedNumber);
         formData.append("type", "mediatemplate");
@@ -79,30 +76,30 @@ const sendOtp = async (req, res) => {
         formData.append("params", otp);
         const imagePath = path.join(__dirname, "/4.jpeg");
         formData.append("media", fs.createReadStream(imagePath));
-  
+
         try {
-          const response = await axios.post(
-            "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
-            formData,
-            {
-              headers: {
-                ...formData.getHeaders(),
-                "api-key": process.env.KALEYRA_API_KEY, // Use your API key
-              },
-            }
-          );
-          return res.status(200).json({
-            message: "WhatsApp OTP sent successfully.",
-            otp,
-            data: response.data,
-          });
+            const response = await axios.post(
+                "https://api.in.kaleyra.io/v1/HXIN1751096165IN/messages",
+                formData,
+                {
+                    headers: {
+                        ...formData.getHeaders(),
+                        "api-key": process.env.KALEYRA_API_KEY || "A17d7d416a4abf01de27c9dc4107272ec", // Replace with your actual API key
+                    },
+                }
+            );
+            return res.status(200).json({
+                message: "WhatsApp OTP sent successfully",
+                data: response.data,
+                otp: otp,
+            });
         } catch (error) {
-          console.error("Error sending WhatsApp OTP:", error);
-          return res.status(500).json({
-            message: "Failed to send WhatsApp OTP.",
-            error: error.response ? error.response.data : error.message,
-          });
-        }
+            console.error("Error sending WhatsApp message: ", error);
+            return res.status(500).json({
+                message: "Failed to send WhatsApp OTP",
+                error: error.response ? error.response.data : error.message,
+            });
+        }   
       } else if (type === 'voice') {
         // Voice OTP sending logic
         try {
@@ -141,25 +138,36 @@ const sendOtp = async (req, res) => {
 // Controller function to handle user registration
 const register = async (req, res) => {
     try {
-      const { mobileNumber, enteredOtp } = req.body;
-  
+      let { mobileNumber, enteredOtp, actualOtp, newUser, loginWith } = req.body;
+
+      // Check if customerData exists and update mobileNumber and loginWith
+      if (req.body.customerData) {
+        ({ mobileNumber, loginWith } = req.body.customerData);
+        newUser = true;
+      }
+
+      console.log("Received Data:", req.body); // Log the entire body
+    console.log("Mobile Number:", mobileNumber);
+    console.log("Entered OTP:", enteredOtp);
+    console.log("Actual OTP:", actualOtp);
+    console.log("NewUser",newUser);
       // Validate input
-      if (!mobileNumber || !enteredOtp) {
+      if ((!mobileNumber || !enteredOtp) && !req.body.customerData ) {
         return res.status(400).json({ message: "Mobile number and OTP are required." });
       }
   
       // Fetch the OTP and newUser flag from Redis
-      const otpKey = `otp:${mobileNumber}`;
-      const data = await redisClient.get(otpKey);
+      // const otpKey = `otp:${mobileNumber}`;
+      // const data = await redisClient.get(otpKey);
   
-      if (!data) {
-        return res.status(404).json({ message: "OTP expired or not found. Please request a new OTP." });
-      }
+      // if (!data) {
+      //   return res.status(404).json({ message: "OTP expired or not found. Please request a new OTP." });
+      // }
   
-      const { otp, newUser } = JSON.parse(data);
+      // const { otp, newUser } = JSON.parse(data);
   
       // Validate OTP
-      if (otp !== parseInt(enteredOtp, 10)) {
+      if ((parseInt(enteredOtp) !== actualOtp) && !req.body.customerData) {
         return res.status(400).json({ message: "Invalid OTP. Please try again." });
       }
   
@@ -177,15 +185,21 @@ const register = async (req, res) => {
       // Create the new user
       const user = new User({
         mobileNumber,
+        loginWith,
         role: 'CommonUser', // Default role for new users
       });
+      if(req.body.customerData){
+        const {name, email} = req.body.customerData
+        user.email = email;
+        user.name = name;
+      }
       await user.save();
   
       // Delete the OTP from Redis
-      await redisClient.del(otpKey);
+      // await redisClient.del(otpKey);
   
       // Return the newly created user
-      return res.status(201).json({
+      return res.status(200).json({
         message: "User registered successfully.",
         user: {
           id: user._id,
@@ -201,36 +215,33 @@ const register = async (req, res) => {
 
 // Controller function for user login
 const login = async (req, res) => {
-    try {
-      const { mobileNumber, enteredOtp } = req.body;
-  
-      // Validate input
-      if (!mobileNumber || !enteredOtp) {
-        return res.status(400).json({ message: "Mobile number and OTP are required." });
-      }
-  
-      const otpKey = `otp:${mobileNumber}`;
-      const storedOtp = await redisClient.get(otpKey);
-  
-      // Check if OTP exists
-      if (!storedOtp) {
-        return res.status(404).json({ message: "OTP expired or not found. Please request a new OTP." });
-      }
-  
-      // Validate OTP
-      if (storedOtp !== enteredOtp) {
-        return res.status(400).json({ message: "Invalid OTP. Please try again." });
-      }
-  
-      // OTP is valid; delete it from Redis
-      await redisClient.del(otpKey);
-  
+  try {
+    const { mobileNumber, enteredOtp, actualOtp } = req.body;
+
+    console.log("Received Data:", req.body); // Log the entire body
+    console.log("Mobile Number:", mobileNumber);
+    console.log("Entered OTP:", enteredOtp);
+    console.log("Actual OTP:", actualOtp);
+
+    // Validate input
+    if (!mobileNumber || !enteredOtp) {
+      console.log("Validation Failed: Missing mobileNumber or enteredOtp");
+      return res.status(400).json({ message: "Mobile number and OTP are required." });
+    }
+
+    // Validate OTP
+    if (actualOtp !== parseInt(enteredOtp)) {
+      console.log("Validation Failed: Invalid OTP");
+      return res.status(400).json({ message: "Invalid OTP. Please try again." });
+    }
+
       // Check if user exists
       const user = await User.findOne({ mobileNumber });
+      console.log(user);
       if (!user) {
         return res.status(404).json({ message: "User not found. Please register first." });
       }
-  
+
       // Successful login
       return res.status(200).json({
         message: "Login successful!",
@@ -240,64 +251,71 @@ const login = async (req, res) => {
           role: user.role,
         },
       });
-    } catch (error) {
-      console.error("Error in login:", error);
-      return res.status(500).json({ message: "Internal server error.", error: error.message });
-    }
-  };
+
+  } catch (error) {
+    console.error("Error in login:", error);
+    return res.status(500).json({ message: "Internal server error.", error: error.message });
+  }
+};
+
 
 
 // fetchAdmin controller function
 const fetchAdmin = async (req, res) => {
-    try {
-        const { mobileNumber } = req.params;
-        console.log("dbngrghhgrefg",req.params);
-		const admin = await SupperAdmin.findOne({ mobileNumber }) 
-            || await SaleAdmin.findOne({ mobileNumber }) 
-            || await ProductAdmin.findOne({ mobileNumber: mobileNumber });
-        console.log(admin);
-        if (!admin) {
-            return res.status(400).json({ message: "MobileNumber are required" });
-        }
-        if(admin.type === 'SupperAdmin'){
-			const populatedAdmin = await SupperAdmin.findById(admin._id).populate('saleAdmin').populate('productAdmin');
-            const allAdminData = [
-                ...(populatedAdmin.saleAdmin || []),
-                ...(populatedAdmin.productAdmin || [])
-            ];
+  try {
+    const { mobileNumber } = req.params;
 
-            return res.status(200).json(allAdminData);
-        }
-        if(admin.type === 'SaleAdmin'){
-            const populatedAdmin = await SaleAdmin.findById(admin._id).populate('saleManager');
-            const allAdminData = [
-                ...populatedAdmin.saleManager || []
-            ];
-            return res.status(200).json(allAdminData);
-        }
-        if(admin.type === 'SaleManager'){
-            const populatedAdmin = await SaleManager.findById(admin._id)
-                .populate({
-                    path: 'customers',
-                    populate: {
-                    path: 'addresses',
-                    model: 'Address',
-                    options: { lean: true }  // This will ensure addresses are also populated as plain objects
-                    },
-                    options: { lean: true }  // This ensures customers are populated as plain objects
-                })
-                .lean();  // This ensures the SaleManager itself is a plain object
-                // Log the result to inspect the populated data
-                console.dir(populatedAdmin.customers, { depth: null });
-            return res.status(200).json({customers: populatedAdmin.customers});
-        }
-        return res.status(400).json({ message: "Invalid admin type" });
+    console.log("Fetching user with mobileNumber:", mobileNumber);
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal Server Error" });
+    // Find the user by mobile number
+    const user = await User.findOne({ mobileNumber })
+      .populate('saleAdmin') // Populate saleAdmin for SuperAdmin
+      .populate('productAdmin') // Populate productAdmin for SuperAdmin
+      .populate('saleManager') // Populate saleManager for SaleAdmin
+      .populate('customers') // Populate customers for SaleManager
+      .lean(); // Use lean for performance
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found with the provided mobile number." });
     }
+
+    console.log("Fetched user:", user);
+
+    let responseData;
+
+    // Handle data based on user role
+    switch (user.role) {
+      case 'SuperAdmin':
+        responseData = {
+          user,
+          saleAdmins: user.saleAdmin || [], // Related saleAdmin data
+          productAdmins: user.productAdmin || [], // Related productAdmin data
+        };
+        break;
+      case 'SaleAdmin':
+        responseData = {
+          user,
+          saleManagers: user.saleManager || [], // Related saleManager data
+        };
+        break;
+      case 'SaleManager':
+        responseData = {
+          user,
+          customers: user.customers || [], // Related customer data
+        };
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid user role." });
+    }
+
+    return res.status(200).json(responseData);
+
+  } catch (error) {
+    console.error("Error in fetchAdmin:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
 };
+
 
 const addAdmin = async (req, res) => {
     try {
