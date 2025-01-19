@@ -45,7 +45,10 @@ const redisClient = redis.createClient({
 initializeRedis();
   
 
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000', // Allow requests from this origin
+    credentials: true,              // Allow cookies and credentials
+  }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -55,6 +58,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
     saveUninitialized: true,
+    cookie: { secure: false }
 }));
 
 // Passport middleware
@@ -106,5 +110,5 @@ connectDb().then(async (db) => {
 }).catch((err) => {
     console.error("Error connecting to database:", err);
 });
-console.log("erddsgfvdsfs",redisClient);
+//console.log("erddsgfvdsfs",redisClient);
 module.exports = redisClient;

@@ -236,7 +236,10 @@ const login = async (req, res) => {
     }
 
       // Check if user exists
-      const user = await User.findOne({ mobileNumber });
+      const user = await User.findOne({ mobileNumber }).populate({
+        path: 'cart.productId',
+        model: 'Product',
+      });
       console.log(user);
       if (!user) {
         return res.status(404).json({ message: "User not found. Please register first." });
@@ -249,6 +252,7 @@ const login = async (req, res) => {
           id: user._id,
           mobileNumber: user.mobileNumber,
           role: user.role,
+          cart: user.cart,
         },
       });
 

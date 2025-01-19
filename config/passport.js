@@ -1,59 +1,82 @@
 const passport = require('passport');
 const googleStrategy = require('passport-google-oauth20').Strategy;
 const dotenv = require('dotenv');
-const User = require('../models/commonUser-model');
+const User = require('../models/User');
 
 dotenv.config();
 
-// set the passport strategy using the google strategy
-passport.use(new googleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: 'http://localhost:5000/auth/google/callback'
-},
+passport.use(
+  new googleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: 'http://localhost:5000/auth/google/callback',
+    },
     async (accessToken, refreshToken, profile, done) => {
-        console.log("profile",profile);
-        try {
-            // Check if the user already exists
-            let user = await User.findOne({ email: profile.emails[0].value , loginWith:'email'});
-            if (user) {
-                return done(null, user);
-            }
-            // Create a new user if not found
-            user = new User({
-                googleId: profile.id,   
-                name: profile.displayName,
-                email: profile.emails[0].value,
-                userImage: profile.photos[0].value,
-                loginWith:'email'
-            });
-            await user.save();
-            done(null, user);
-        } catch (error) {
-            console.error(error);
-            done(error, null);
+      try {
+        const email = profile.emails[0].value;
+
+        // Check if a user with this email and loginWith='google' exists
+        let user = await User.findOne({ email, loginWith: 'google' });
+        if (user) {
+          return done(null, user);
         }
-    }   
-));
 
-
-// passport serialize user
-passport.serializeUser((user, done) => {
-    done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        if (!user) {
-            return done(new Error('User not found'), null);
+        // Check for email conflicts with other login methods
+        // user = await User.findOne({ email });
+        if (user) {
+          return done(
+            new Error(
+              `A user with this email exists but is registered with ${user.loginWith}. Please log in using the correct method.`
+            ),
+            null
+          );
         }
+
+        // Create a new user with loginWith='google'
+        user = new User({
+          googleId: profile.id,
+          name: profile.displayName,
+          email: email,
+          userImage: profile.photos[0].value,
+          loginWith: 'google',
+        });
+        await user.save();
         done(null, user);
-    } catch (error) {
-        console.error(error);
+      } catch (error) {
+        console.error('Error in Google Strategy:', error);
         done(error, null);
+      }
     }
-});
+  )
+);
 
+passport.serializeUser((user, done) => {
+    console.log('Serializing User:', user); // Debug log
+    done(null, user.id);
+  });
+  
+  passport.deserializeUser(async (id, done) => {
+    try {
+      // console.log('Deserializing User ID:', id); // Debug log
+      // Fetch the user and populate the cart's product details
+      const user = await User.findById(id).populate({
+        path: 'cart.productId',
+        model: 'Product',
+      });
+      // console.log("des", user);
+      if (!user) {
+        console.error(`User not found for ID: ${id}. Clearing session.`);
+        return done(null, false); // Pass `false` to clear the session
+      }
+      // console.log('User Found:', user); // Debug log
+      done(null, user);
+    } catch (error) {
+      console.error('Error in deserialization:', error); // Log any errors
+      done(error, null);
+    }
+  });
+  
+  
 
 module.exports = passport;

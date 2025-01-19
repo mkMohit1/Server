@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    mobileNumber: { type: String, required: true, unique: true },
+    mobileNumber: { 
+        type: String, 
+        required: function () { 
+            return this.loginWith === 'whatsapp' || this.loginWith === 'voice'; 
+        }, 
+        unique: true },
     email: { type: String, required: false },
     name: { type: String, default: "User" },
     userImage: { type: String, default: 'https://cdn-icons-png.flaticon.com/128/2202/2202112.png' },
@@ -18,6 +23,13 @@ const userSchema = new mongoose.Schema({
     customers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleManager
     contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // General user connections
     addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Address' }], // For storing user addresses
+    cart: [
+        {
+            productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+            quantity: { type: Number, default: 1 },
+            addedAt: { type: Date, default: Date.now },
+        },
+    ],    
     createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

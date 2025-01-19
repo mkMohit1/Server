@@ -1,5 +1,6 @@
 const ProductAdmin = require('../models/productAdmin-model');
 const Product = require('../models/Product-model');
+const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
 
@@ -36,7 +37,7 @@ const fetchProduct = async (req, res) => {
 const fetchAllProduct = async (req, res) => {
     try {
         const allProduct = await Product.find();
-
+          //console.log("dsdsfbsdfsdfsddfh",allProduct);
         if (allProduct.length > 0) {
             res.status(200).json({ products: allProduct });
         } else {
@@ -152,6 +153,104 @@ const updateProduct = async (req, res) => {
       return res.status(500).json({ message: `Error while updating the product: ${error.message}` });
     }
   };
-  
 
-module.exports = { addProduct, deleteProduct, fetchProduct, fetchAllProduct, updateProduct };
+// Add this in your product controller
+const validateCart = async (req, res) => {
+  const { cartItems } = req.body;
+
+  if (!Array.isArray(cartItems) || cartItems.length === 0) {
+    return res.status(400).json({ message: "No items in the cart" });
+  }
+
+  const validatedItems = [];
+  const errors = [];
+
+  for (const item of cartItems) {
+    const product = await Product.findById(item._id);
+    if (!product) {
+      errors.push({ productId: item._id, reason: "Product not found" });
+      continue;
+    }
+
+    if (product.inventory <= 0) {
+      errors.push({ productId: item._id, reason: "Out of stock" });
+      continue;
+    }
+
+    if (product.status !== "Active") {
+      errors.push({ productId: item._id, reason: "Inactive product" });
+      continue;
+    }
+
+    validatedItems.push(item);
+  }
+
+  res.json({ validatedItems, errors });
+};
+
+
+const syncCart = async (req, res) => {
+  try {
+    const { userId, cartItems } = req.body;
+    console.log("Sync Cart Request:", req.body);
+
+    // Fetch user and populate cart
+    const user = await User.findById(userId).populate({
+      path: 'cart.productId',
+      model: 'Product',
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log("Existing User Cart:", user.cart);
+
+    // Merge cart items
+    const mergedCart = user.cart.length>0?[...user.cart]:[];
+    let i=0;
+    for (let newItem of cartItems) {
+      console.log("Processing New Item:", mergedCart[i].productId);
+      const existingItem =mergedCart.length>0? mergedCart.find(
+        (item) => item.productId._id.toString() == newItem._id
+      ):null;
+      if (existingItem) {
+        existingItem.quantity += newItem.rentquantity; // Update quantity
+      } else {
+        mergedCart.push({
+          productId: newItem._id, // Use new item product ID
+          quantity: newItem.rentQuantity, // Use new item rent quantity
+          addedAt: newItem.addedAt, // Use new item addedAt timestamp
+        });
+      }
+      i++;
+    }
+
+    console.log("Merged Cart:", mergedCart);
+
+    // Assign merged cart back to the user
+    user.cart = mergedCart.map((item) => ({
+      productId: item.productId._id || item.productId, // Ensure productId is stored as an ID
+      quantity: item.quantity,
+      addedAt: item.addedAt || new Date(),
+    }));
+
+    user.$__.version = undefined; // Disable version check
+    // Save the updated user cart
+    await user.save();
+
+    // Re-populate the cart after saving
+    const updatedUser = await User.findById(userId).populate({
+      path: 'cart.productId',
+      model: 'Product',
+    });
+
+    res.json({ message: "Cart synced successfully", cart: updatedUser.cart });
+  } catch (error) {
+    console.error("Error syncing cart:", error);
+    res.status(500).json({ message: `Error syncing cart: ${error.message}` });
+  }
+};
+
+
+module.exports = { addProduct, deleteProduct, fetchProduct, fetchAllProduct, updateProduct, validateCart, syncCart };
