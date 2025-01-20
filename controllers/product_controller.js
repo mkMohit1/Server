@@ -212,7 +212,7 @@ const syncCart = async (req, res) => {
     for (let newItem of cartItems) {
       console.log("Processing New Item:", mergedCart[i].productId);
       const existingItem =mergedCart.length>0? mergedCart.find(
-        (item) => item.productId?(item.productId._id.toString() == newItem._id):(item._id.toString() == newItem._id)
+        (item) => item.productId?(item.productId._id.toString() == newItem._id):(item._id == newItem._id)
       ):null;
       if (existingItem) {
         existingItem.quantity += newItem.rentquantity; // Update quantity
