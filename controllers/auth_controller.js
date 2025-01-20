@@ -201,11 +201,7 @@ const register = async (req, res) => {
       // Return the newly created user
       return res.status(200).json({
         message: "User registered successfully.",
-        user: {
-          id: user._id,
-          mobileNumber: user.mobileNumber,
-          role: user.role,
-        },
+        user
       });
     } catch (error) {
       console.error("Error in register:", error);
