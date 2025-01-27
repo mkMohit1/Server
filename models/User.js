@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
     saleAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SuperAdmin
     productAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SuperAdmin
     saleManager: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleAdmin
+    AdminID:{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // For SaleAdmin or ProductAdmin
     customers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleManager
     contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // General user connections
     addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Address' }], // For storing user addresses

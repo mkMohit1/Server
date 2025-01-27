@@ -231,12 +231,12 @@ const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP. Please try again." });
     }
 
-      // Check if user exists
-      const user = await User.findOne({ mobileNumber }).populate({
-        path: 'cart.productId',
-        model: 'Product',
-      });
-      console.log(user);
+    // const user = await User.findOne({ mobileNumber });
+    // console.log('Before Populate:', user.cart);
+    
+    const user = await User.findOne({ mobileNumber }).populate('cart.productId');
+    // console.dir('After Populate:', user.cart, { depth: null });
+    
       if (!user) {
         return res.status(404).json({ message: "User not found. Please register first." });
       }
@@ -244,7 +244,7 @@ const login = async (req, res) => {
       // Successful login
       return res.status(200).json({
         message: "Login successful!",
-       user,
+        user,
       });
 
   } catch (error) {
@@ -330,25 +330,27 @@ const addAdmin = async (req, res) => {
   
       // Logic for handling SaleAdmin and ProductAdmin
       if (type == 'SaleAdmin' || type == 'ProductAdmin') {
-        const supperAdmin = await SupperAdmin.findById(supperAdminID);
+        // console.log("test mk 1");
+        const supperAdmin = await User.findOne({_id: supperAdminID});
+        console.log(supperAdmin);
         if (!supperAdmin) {
           return res.status(404).json({ error: 'SuperAdmin not found' });
         }
-  
+        // console.log("test mk 2");
         const existingAdmin = type === 'SaleAdmin'
-          ? await SaleAdmin.findOne({ mobileNumber })
-          : await ProductAdmin.findOne({ mobileNumber });
+          ? await User.findOne({ mobileNumber })
+          : await User.findOne({ mobileNumber });
   
         if (existingAdmin) {
           return res.status(400).json({ error: `${type} with this mobile number already exists` });
         }
-  
+        // console.log("test mk 3");
         const newUser = type === 'SaleAdmin'
-          ? new SaleAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id, loginWith:loginWith })
-          : new ProductAdmin({ mobileNumber, name, email, type, SupperAdmin: supperAdmin._id , loginWith:loginWith});
+          ? new User({ mobileNumber, name, email, role:type, AdminID: supperAdmin._id, loginWith:'whatsapp' })
+          : new User({ mobileNumber, name, email, role:type, AdminID: supperAdmin._id , loginWith:'whatsapp'});
   
         await newUser.save();
-  
+        // console.log("test mk 4");
         // Update SupperAdmin to include this new admin
         if (type === 'SaleAdmin') {
           supperAdmin.saleAdmin.push(newUser._id);
@@ -357,24 +359,24 @@ const addAdmin = async (req, res) => {
         }
   
         await supperAdmin.save();
-  
+        // console.log("test mk 5");
         return res.status(201).json({ message: `${type} registered successfully`, newUser });
       }
   
       // Logic for handling SaleManager
       if (type === 'SaleManager') {
-        const saleAdmin = await SaleAdmin.findById(supperAdminID);  // Assuming supperAdminID is SaleAdmin's ID
+        const saleAdmin = await User.findById(supperAdminID);  // Assuming supperAdminID is SaleAdmin's ID
         if (!saleAdmin) {
           return res.status(404).json({ error: 'SaleAdmin not found' });
         }
   
-        const existingSaleManager = await SaleManager.findOne({ mobileNumber });
+        const existingSaleManager = await User.findOne({ mobileNumber });
         if (existingSaleManager) {
           return res.status(400).json({ error: 'SaleManager with this mobile number already exists' });
         }
   
-        const newSaleManager = new SaleManager({
-          mobileNumber, name, email, type, SaleAdmin: supperAdminID, loginWith:loginWith
+        const newSaleManager = new User({
+          mobileNumber, name, email, role:type, AdminID: supperAdminID, loginWith:"whatsapp"
         });
   
         await newSaleManager.save();
@@ -667,35 +669,48 @@ const updateSaleAdmin = async (req, res) => {
 const users = async (req, res) => {
     try {
         const users = await User.find();
-        if (users.length === 0) {
+        console.log(users);
+        if (users.length == 0) {
+          console.log("Inside the if condition");
             const mobile = "8860721857";
             const defaultSaleNumber = '1234567890';
-            const defaultProfuctNumber = '1234567891';
+            const defaultProductNumber = '1234567891';
 
             console.log("Admin not found");
 
-            const newUser = new SupperAdmin({
-                mobileNumber: mobile,
-                name: "Supper Admin",
-                email: "mohityoga.2016@gmail.com"
-            });
-            
-            const newSaleAdmin = new SaleAdmin({
-                mobileNumber: defaultSaleNumber,
-                name: "Default Sale Admin",
-                email: "defaultSale@gmail.com",
-                SupperAdmin: newUser._id
+            // Create SuperAdmin
+            const newUser = new User({
+              mobileNumber: mobile,
+              name: "Super Admin",
+              email: "mohityoga.2016@gmail.com",
+              role: "SuperAdmin",
+              loginWith: "whatsapp",
             });
 
-            const newProductAdmin = new ProductAdmin({
-                mobileNumber: defaultProfuctNumber,
-                name: "Default Product Admin",
-                email: "defaultProduct@gmail.com",
-                SupperAdmin: newUser._id
+            // Create Default SaleAdmin
+            const newSaleAdmin = new User({
+              mobileNumber: defaultSaleNumber,
+              name: "Default Sale Admin",
+              email: "defaultSale@gmail.com",
+              AdminID: newUser._id,
+              role: "SaleAdmin",
+              loginWith: "whatsapp",
             });
 
+            // Create Default ProductAdmin
+            const newProductAdmin = new User({
+              mobileNumber: defaultProductNumber,
+              name: "Default Product Admin",
+              email: "defaultProduct@gmail.com",
+              AdminID: newUser._id,
+              role: "ProductAdmin",
+              loginWith: "whatsapp",
+            });
+
+            // Associate the SaleAdmin and ProductAdmin with the SuperAdmin
             newUser.saleAdmin.push(newSaleAdmin._id);
             newUser.productAdmin.push(newProductAdmin._id);
+
             await newUser.save();
             await newSaleAdmin.save();
             await newProductAdmin.save();

@@ -34,9 +34,12 @@ const {
   updateProduct,
   validateCart,
   syncCart,
+  deletedCartItem
 } = require('../controllers/product_controller');
 const { addContact } = require('../controllers/contact_controller');
 const { addUserAddress, updateAddress, fetchAddressesByUserId , deleteAddress} = require('../controllers/customer_controller');
+const { addSubscription } = require('../controllers/subscription_controller');
+const { addConsultation } = require('../controllers/consultation_controller');
 
 // Multer configuration to handle file uploads
 const storage = multer.diskStorage({
@@ -114,6 +117,7 @@ router.route('/products/allproducts').get(fetchAllProduct);
 router.route('/admin/updateProduct/:id').put(upload.single('productImage'), updateProduct);
 router.route('/product/validate-cart').post(validateCart);
 router.route('/user/sync-cart').post(syncCart);
+router.route('/cart/item').delete(deletedCartItem);
 
 // Generate a 32-byte key
 const secretKey = crypto.createHash('sha256').update('manish-secret-key').digest();
@@ -130,23 +134,45 @@ function encryptData(data) {
 }
 
 // Example usage
-router.route('/auth/google/callback').get(
-  passportSetup.authenticate('google'),
-  (req, res) => {
-    const userData = req.user;
-    const encrypted = encryptData(userData);
+router.route('/auth/google/callback').get((req, res, next) => {
+  passportSetup.authenticate('google', (err, user, info) => {
+    if (err) {
+      // Log any internal errors
+      console.error('Passport Error:', err);
+      return res.redirect(`http://localhost:3000?error=${encodeURIComponent('Authentication failed.')}`);
+    }
 
-    console.log('Encrypted Data:', encrypted.encryptedData);
-    console.log('IV:', encrypted.iv);
+    if (!user) {
+      // Log the info object to check for the error message
+      console.log('Passport Info:', info);
+      const error = info?.message || 'Authentication failed.';
+      return res.redirect(`http://localhost:3000?error=${encodeURIComponent(error)}`);
+    }
 
-    res.redirect(`http://localhost:3000?user=${encodeURIComponent(encrypted.encryptedData)}&iv=${encodeURIComponent(encrypted.iv)}`);
-  }
-);
+    // If user exists, log them in and redirect
+    req.logIn(user, (loginErr) => {
+      if (loginErr) {
+        console.error('Login Error:', loginErr);
+        return res.redirect(`http://localhost:3000?error=${encodeURIComponent('Login failed.')}`);
+      }
+
+      // Encrypt user data and redirect
+      const encrypted = encryptData(user);
+      res.redirect(`http://localhost:3000?user=${encodeURIComponent(encrypted.encryptedData)}&iv=${encodeURIComponent(encrypted.iv)}`);
+    });
+  })(req, res, next);
+});
 
 // Google authentication route
 router.route('/auth/google').get(
+  (req, res, next) => {
+    // Attach the newUser flag to the session
+    req.session.newUser = req.query.newUser === 'true';
+    next();
+  },
   passportSetup.authenticate('google', {
     scope: ['profile', 'email'],
+    prompt: 'select_account', // Forces account selection even if already logged in
   })
 );
 
@@ -162,9 +188,16 @@ router.route('/auth/logout').get((req, res) => {
         console.error('Error destroying session:', err);
         return res.status(500).json({ message: 'Failed to clear session' });
       }
+      res.clearCookie('connect.sid');
       res.status(200).json({ message: 'Successfully logged out' });
     });
   });
 });
+
+// subscription route
+router.route('/subscribe').post(addSubscription);
+
+// consultation route
+router.route('/consultation').post(addConsultation);
 
 module.exports = router;
