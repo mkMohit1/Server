@@ -30,7 +30,8 @@ const userSchema = new mongoose.Schema({
             quantity: { type: Number, default: 1 },
             addedAt: { type: Date, default: Date.now },
         },
-    ],    
+    ],
+    products:[{type:mongoose.Schema.Types.ObjectId, ref:'Product'}], //for store the product id's
     createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

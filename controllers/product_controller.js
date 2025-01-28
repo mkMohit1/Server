@@ -20,13 +20,15 @@ const upload = multer({
 const fetchProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const productAdmin = await ProductAdmin.findOne({ _id: id });
+        // console.log(req.params);
+        const productAdmin = await User.findOne({ _id: id });
 
         if (!productAdmin) {
             return res.status(404).json({ message: "ProductAdmin not found" });
         }
-
+        //console.log(productAdmin);
         const populatedProductAdmin = await productAdmin.populate('products');
+        //console.log(populatedProductAdmin);
         res.status(200).json({ products: populatedProductAdmin.products });
     } catch (error) {
         res.status(500).json({ message: `Internal Server Error: ${error.message}` });
@@ -51,7 +53,7 @@ const fetchAllProduct = async (req, res) => {
 // Add a new product
 const addProduct = async (req, res) => {
    console.log("Body:", req.body);
-    // console.log("File:", req.file);
+    console.log("File:", req.file);
     try {
         const { title, subTitle, description, mrp,inventory,productUsp, category, status, discount, userID } = req.body;
 
@@ -87,7 +89,7 @@ const addProduct = async (req, res) => {
         });
 
         const product = await newProduct.save();
-        const productAdmin = await ProductAdmin.findById(userID);
+        const productAdmin = await User.findById(userID);
         productAdmin.products.push(product);
         await productAdmin.save();
 
@@ -101,11 +103,12 @@ const addProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(req.params);
         const product = await Product.findById(id);
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
         }
-        const productAdmin = await ProductAdmin.findById(product.productAdmin);
+        const productAdmin = await User.findById(product.productAdmin);
         if (!productAdmin) {
             return res.status(404).json({ message: "ProductAdmin not found" });
         }
@@ -205,7 +208,7 @@ const syncCart = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    //console.log("Existing User Cart:", user.cart);
+    console.log("Existing User Cart:", user.cart);
 
     // Merge cart items
     const mergedCart = [...user.cart];
@@ -220,15 +223,19 @@ const syncCart = async (req, res) => {
   
         if (existingItem) {
           // Update quantity for existing items
+          console.log("inside");
           console.log("Existing Item:", true);
           if(existingItem.quantity< newItem.quantity && !delta){
             existingItem.quantity = newItem.quantity;
           }
           if(delta ==1 || delta == -1){
+            console.log("inside2");
             if(existingItem.quantity + delta <1){
               existingItem.quantity += 0;
             }else{
+              console.log("inside3");
               existingItem.quantity += delta;
+              console.log(existingItem.quantity);
             }
           }
         } else if(existingItem !== -1) {

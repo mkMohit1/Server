@@ -7,9 +7,7 @@ const axios = require('axios');
 const fs = require('fs');
 // // const redis = require('redis');
 // const redisClient  = require('../Server'); // Adjust the path to `server.js`
-// console.log("vddsfdsbjfj", redisClient);
-
-
+// ////console.log("vddsfdsbjfj", redisClient);
 
 // Controller function to handle home route
 const home = async (req, res) => {
@@ -20,7 +18,7 @@ const home = async (req, res) => {
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        console.error("Error in home route:", error);
+        ////console.error("Error in home route:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
@@ -45,7 +43,7 @@ const sendOtp = async (req, res) => {
         }
 
         // if (!redisClient.isOpen) {
-        //     console.error("Redis client is not connected");
+        //     ////console.error("Redis client is not connected");
         //     return res.status(500).json({ message: "Redis client is not connected." });
         // }
         // // Rate limiting: Max 3 OTP requests in 10 minutes
@@ -94,7 +92,7 @@ const sendOtp = async (req, res) => {
                 otp: otp,
             });
         } catch (error) {
-            console.error("Error sending WhatsApp message: ", error);
+            ////console.error("Error sending WhatsApp message: ", error);
             return res.status(500).json({
                 message: "Failed to send WhatsApp OTP",
                 error: error.response ? error.response.data : error.message,
@@ -119,7 +117,7 @@ const sendOtp = async (req, res) => {
             data: response.data,
           });
         } catch (error) {
-          console.error("Error sending Voice OTP:", error);
+          //console.error("Error sending Voice OTP:", error);
           return res.status(500).json({
             message: "Failed to send Voice OTP.",
             error: error.response ? error.response.data : error.message,
@@ -129,11 +127,10 @@ const sendOtp = async (req, res) => {
         return res.status(400).json({ message: "Invalid OTP type. Must be 'whatsapp' or 'voice'." });
       }
     } catch (error) {
-      console.error("Error in sendOtp:", error);
+      //console.error("Error in sendOtp:", error);
       return res.status(500).json({ message: "Error sending OTP.", error: error.message });
     }
 };
-
 
 // Controller function to handle user registration
 const register = async (req, res) => {
@@ -146,11 +143,11 @@ const register = async (req, res) => {
         newUser = true;
       }
 
-      console.log("Received Data:", req.body); // Log the entire body
-    console.log("Mobile Number:", mobileNumber);
-    console.log("Entered OTP:", enteredOtp);
-    console.log("Actual OTP:", actualOtp);
-    console.log("NewUser",newUser);
+      //console.log("Received Data:", req.body); // Log the entire body
+    //console.log("Mobile Number:", mobileNumber);
+    //console.log("Entered OTP:", enteredOtp);
+    //console.log("Actual OTP:", actualOtp);
+    //console.log("NewUser",newUser);
       // Validate input
       if ((!mobileNumber || !enteredOtp) && !req.body.customerData ) {
         return res.status(400).json({ message: "Mobile number and OTP are required." });
@@ -204,7 +201,7 @@ const register = async (req, res) => {
         user
       });
     } catch (error) {
-      console.error("Error in register:", error);
+      //console.error("Error in register:", error);
       return res.status(500).json({ message: "Internal server error.", error: error.message });
     }
   };
@@ -214,28 +211,28 @@ const login = async (req, res) => {
   try {
     const { mobileNumber, enteredOtp, actualOtp } = req.body;
 
-    console.log("Received Data:", req.body); // Log the entire body
-    console.log("Mobile Number:", mobileNumber);
-    console.log("Entered OTP:", enteredOtp);
-    console.log("Actual OTP:", actualOtp);
+    //console.log("Received Data:", req.body); // Log the entire body
+    //console.log("Mobile Number:", mobileNumber);
+    //console.log("Entered OTP:", enteredOtp);
+    //console.log("Actual OTP:", actualOtp);
 
     // Validate input
     if (!mobileNumber || !enteredOtp) {
-      console.log("Validation Failed: Missing mobileNumber or enteredOtp");
+      //console.log("Validation Failed: Missing mobileNumber or enteredOtp");
       return res.status(400).json({ message: "Mobile number and OTP are required." });
     }
 
     // Validate OTP
     if (actualOtp !== parseInt(enteredOtp)) {
-      console.log("Validation Failed: Invalid OTP");
+      //console.log("Validation Failed: Invalid OTP");
       return res.status(400).json({ message: "Invalid OTP. Please try again." });
     }
 
     // const user = await User.findOne({ mobileNumber });
-    // console.log('Before Populate:', user.cart);
+    // //console.log('Before Populate:', user.cart);
     
     const user = await User.findOne({ mobileNumber }).populate('cart.productId');
-    // console.dir('After Populate:', user.cart, { depth: null });
+    // //console.dir('After Populate:', user.cart, { depth: null });
     
       if (!user) {
         return res.status(404).json({ message: "User not found. Please register first." });
@@ -248,33 +245,34 @@ const login = async (req, res) => {
       });
 
   } catch (error) {
-    console.error("Error in login:", error);
+    //console.error("Error in login:", error);
     return res.status(500).json({ message: "Internal server error.", error: error.message });
   }
 };
-
-
 
 // fetchAdmin controller function
 const fetchAdmin = async (req, res) => {
   try {
     const { mobileNumber } = req.params;
 
-    console.log("Fetching user with mobileNumber:", mobileNumber);
+    //console.log("Fetching user with mobileNumber:", mobileNumber);
 
     // Find the user by mobile number
     const user = await User.findOne({ mobileNumber })
       .populate('saleAdmin') // Populate saleAdmin for SuperAdmin
       .populate('productAdmin') // Populate productAdmin for SuperAdmin
       .populate('saleManager') // Populate saleManager for SaleAdmin
-      .populate('customers') // Populate customers for SaleManager
+      .populate({path: 'customers',
+        populate: {
+          path: 'addresses'}
+        }) // Populate customers for SaleManager
       .lean(); // Use lean for performance
-
+    //console.log("user",user);
     if (!user) {
       return res.status(404).json({ message: "User not found with the provided mobile number." });
     }
 
-    console.log("Fetched user:", user);
+    //console.log("Fetched user:", user);
 
     let responseData;
 
@@ -306,15 +304,14 @@ const fetchAdmin = async (req, res) => {
     return res.status(200).json(responseData);
 
   } catch (error) {
-    console.error("Error in fetchAdmin:", error);
+    //console.error("Error in fetchAdmin:", error);
     return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
-
 const addAdmin = async (req, res) => {
     try {
-      console.log(req.body);
+      //console.log(req.body);
       const { mobileNumber, name, email, type, supperAdminID, loginWith } = req.body;
   
       // Check if the mobile number is already registered
@@ -330,13 +327,13 @@ const addAdmin = async (req, res) => {
   
       // Logic for handling SaleAdmin and ProductAdmin
       if (type == 'SaleAdmin' || type == 'ProductAdmin') {
-        // console.log("test mk 1");
+        // //console.log("test mk 1");
         const supperAdmin = await User.findOne({_id: supperAdminID});
-        console.log(supperAdmin);
+        //console.log(supperAdmin);
         if (!supperAdmin) {
           return res.status(404).json({ error: 'SuperAdmin not found' });
         }
-        // console.log("test mk 2");
+        // //console.log("test mk 2");
         const existingAdmin = type === 'SaleAdmin'
           ? await User.findOne({ mobileNumber })
           : await User.findOne({ mobileNumber });
@@ -344,13 +341,13 @@ const addAdmin = async (req, res) => {
         if (existingAdmin) {
           return res.status(400).json({ error: `${type} with this mobile number already exists` });
         }
-        // console.log("test mk 3");
+        // //console.log("test mk 3");
         const newUser = type === 'SaleAdmin'
           ? new User({ mobileNumber, name, email, role:type, AdminID: supperAdmin._id, loginWith:'whatsapp' })
           : new User({ mobileNumber, name, email, role:type, AdminID: supperAdmin._id , loginWith:'whatsapp'});
   
         await newUser.save();
-        // console.log("test mk 4");
+        // //console.log("test mk 4");
         // Update SupperAdmin to include this new admin
         if (type === 'SaleAdmin') {
           supperAdmin.saleAdmin.push(newUser._id);
@@ -359,7 +356,7 @@ const addAdmin = async (req, res) => {
         }
   
         await supperAdmin.save();
-        // console.log("test mk 5");
+        // //console.log("test mk 5");
         return res.status(201).json({ message: `${type} registered successfully`, newUser });
       }
   
@@ -389,7 +386,7 @@ const addAdmin = async (req, res) => {
       return res.status(400).json({ error: 'No matching admin type found' });
   
     } catch (error) {
-      console.error('Error in addAdmin:', error);
+      //console.error('Error in addAdmin:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
 };
@@ -401,26 +398,28 @@ const deleteAdmin = async (req, res) => {
         console.log(req.params);
 
         if (type === 'SaleManager') {
-            const saleManager = await SaleManager.findOne({ _id: id });
+            const saleManager = await User.findOne({ _id: id });
             if (!saleManager) {
                 return res.status(404).json({ message: "Sale Manager not found" });
             }
-
-            if (saleManager.SaleAdmin) {
-                const saleAdmin = await SaleAdmin.findOne({ _id: saleManager.SaleAdmin });
+            console.log("saleManager",saleManager);
+            if (saleManager.AdminID) {
+                const saleAdmin = await User.findOne({ _id: saleManager.AdminID });
+                console.log("saleAdmin",saleAdmin);
 
                 if (saleAdmin) {
                     saleAdmin.saleManager.pull(id);
+                    console.log("pull from saleAdmin");
                     await saleAdmin.save();
                 }
             }
 
-            await SaleManager.findByIdAndDelete(id);
+            await User.findByIdAndDelete(id);
             return res.status(200).json({ message: "Sale Manager deleted successfully" });
         }
 
         if (type === 'SaleAdmin') {
-            const saleAdmin = await SaleAdmin.findById(id);
+            const saleAdmin = await User.findById(id);
             if (!saleAdmin) {
               return res.status(404).json({ message: "Sale Admin not found" });
             }
@@ -428,7 +427,7 @@ const deleteAdmin = async (req, res) => {
             // Check if this SaleAdmin has saleManagers associated with it
             if (saleAdmin.saleManager && saleAdmin.saleManager.length > 0) {
               // Get the default SaleAdmin (the one without specific saleManagers)
-              const defaultSaleAdmin = await SaleAdmin.findOne({ mobileNumber: '1234567890' }); // Default SaleAdmin number
+              const defaultSaleAdmin = await User.findOne({ mobileNumber: '1234567890' }); // Default SaleAdmin number
       
               if (!defaultSaleAdmin) {
                 return res.status(404).json({ message: "Default Sale Admin not found" });
@@ -438,29 +437,29 @@ const deleteAdmin = async (req, res) => {
               const saleManagersToMove = saleAdmin.saleManager;
       
               // Update saleManagers to point to the default admin
-              await SaleManager.updateMany(
+              await User.updateMany(
                 { _id: { $in: saleManagersToMove } },
-                { $set: { saleAdmin: defaultSaleAdmin._id } }
+                { $set: { AdminID: defaultSaleAdmin._id } }
               );
       
               // Remove saleManagers from the current SaleAdmin
-              await SaleAdmin.findByIdAndUpdate(saleAdmin._id, {
+              await User.findByIdAndUpdate(saleAdmin._id, {
                 $pull: { saleManager: { $in: saleManagersToMove } }
               });
       
               // Add saleManagers to the default SaleAdmin
-              await SaleAdmin.findByIdAndUpdate(defaultSaleAdmin._id, {
+              await User.findByIdAndUpdate(defaultSaleAdmin._id, {
                 $push: { saleManager: { $each: saleManagersToMove } }
               });
             }
             // Delete the SaleAdmin after transferring the saleManagers (if any)
-            await SaleAdmin.findByIdAndDelete(id);
+            await User.findByIdAndDelete(id);
             return res.status(200).json({ message: "Sale Admin deleted successfully" });
         }
 
-        if (type === 'ProductAdmin') {
-            const productAdmin = await ProductAdmin.findById(id);
-            if (!productAdmin) {
+        if (type == 'ProductAdmin') {
+          const productAdmin = await User.findById(id);
+          if (!productAdmin) {
                 return res.status(404).json({ message: "Product Admin not found" });
             }
 
@@ -491,7 +490,7 @@ const deleteAdmin = async (req, res) => {
             }
 
             // Delete the ProductAdmin after transferring the products (if any)
-            await ProductAdmin.findByIdAndDelete(id);
+            await User.findByIdAndDelete(id);
 
             return res.status(200).json({ message: "Product Admin deleted successfully" });
         }
@@ -499,8 +498,8 @@ const deleteAdmin = async (req, res) => {
         return res.status(400).json({ message: "Invalid type provided" });
 
     } catch (error) {
-        console.error('Error deleting admin:', error.message);
-        console.error(error.stack);
+        //console.error('Error deleting admin:', error.message);
+        //console.error(error.stack);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
@@ -515,7 +514,7 @@ const updateAdmin = async (req, res) => {
         // Find and update based on type
         switch(type) {
             case 'SaleAdmin':
-                updatedAdmin = await SaleAdmin.findByIdAndUpdate(
+                updatedAdmin = await User.findByIdAndUpdate(
                     id,
                     { name, email, mobileNumber },
                     { new: true }
@@ -523,14 +522,14 @@ const updateAdmin = async (req, res) => {
 
                 break;
             case 'ProductAdmin':
-                updatedAdmin = await ProductAdmin.findByIdAndUpdate(
+                updatedAdmin = await User.findByIdAndUpdate(
                     id,
                     { name, email, mobileNumber },
                     { new: true }
                 );
                 break;
             case 'SaleManager':
-                updatedAdmin =await SaleManager.findByIdAndUpdate(
+                updatedAdmin =await User.findByIdAndUpdate(
                     id,
                     {name, email, mobileNumber},
                     {new: true}
@@ -546,7 +545,7 @@ const updateAdmin = async (req, res) => {
 
         res.status(200).json(updatedAdmin);
     } catch (error) {
-        console.error('Error updating admin:', error);
+        //console.error('Error updating admin:', error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
@@ -563,7 +562,7 @@ const checkProduct = async (req, res) => {
 
         return res.status(200).json({ product: product.products, otherProductAdmin: allProductAdmin.filter((admin)=>admin.id !==id) });
     } catch (error) {
-        console.error("Error fetching product:", error);
+        //console.error("Error fetching product:", error);
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
@@ -589,7 +588,7 @@ const updateSaleAdmin = async (req, res) => {
         }
   
         const newSaleAdmin = await SaleAdmin.findById(newSaleAdminId);
-        console.log(newSaleAdmin);
+        //console.log(newSaleAdmin);
         if (!newSaleAdmin) {
           return res.status(404).json({ error: 'New SaleAdmin not found' });
         }
@@ -660,7 +659,7 @@ const updateSaleAdmin = async (req, res) => {
       }
   
     } catch (error) {
-      console.error('Error in updating admin:', error);
+      //console.error('Error in updating admin:', error);
       res.status(500).json({ error: 'An error occurred while updating the admin' });
     }
 };
@@ -669,18 +668,18 @@ const updateSaleAdmin = async (req, res) => {
 const users = async (req, res) => {
     try {
         const users = await User.find();
-        console.log(users);
+        ////console.log(users);
         if (users.length == 0) {
-          console.log("Inside the if condition");
+          ////console.log("Inside the if condition");
             const mobile = "8860721857";
             const defaultSaleNumber = '1234567890';
             const defaultProductNumber = '1234567891';
-
-            console.log("Admin not found");
+            const defaultManagerNumber = '1234567892';
+            ////console.log("Admin not found");
 
             // Create SuperAdmin
             const newUser = new User({
-              mobileNumber: mobile,
+              mobileNumber: mobile, 
               name: "Super Admin",
               email: "mohityoga.2016@gmail.com",
               role: "SuperAdmin",
@@ -707,18 +706,27 @@ const users = async (req, res) => {
               loginWith: "whatsapp",
             });
 
+            const newSaleManager = new User({
+              mobileNumber: defaultManagerNumber,
+              name: "Default Sale Manager",
+              email: "defaultSaleManager@gmail.com",
+              AdminID: newSaleAdmin._id,
+              role: "SaleManager",
+              loginWith: "whatsapp",
+            });
             // Associate the SaleAdmin and ProductAdmin with the SuperAdmin
             newUser.saleAdmin.push(newSaleAdmin._id);
             newUser.productAdmin.push(newProductAdmin._id);
-
+            newSaleAdmin.saleManager.push(newSaleManager._id);
             await newUser.save();
             await newSaleAdmin.save();
             await newProductAdmin.save();
+            await newSaleManager.save();
 
-            console.log("Default admins created and linked to SupperAdmin successfully.");
+            ////console.log("Default admins created and linked to SupperAdmin successfully.");
 
         }
-        console.log(users);
+        ////console.log(users);
         return res.status(200).json(users);
     } catch (error) {
         return res.status(500).json({ message: "Error fetching users" });
@@ -728,7 +736,7 @@ const users = async (req, res) => {
 // Controller function to get perticular user
 const singleUser = async (req, res) => {
     try {
-        console.log(req.params);
+        ////console.log(req.params);
         const user = await User.findOne({mobileNumber: req.params.mobile});
         if (user.length === 0) {
             return res.status(404).json({ message: "No users found" });
@@ -741,7 +749,7 @@ const singleUser = async (req, res) => {
   
 const addCommonUser = async(req,res)=>{
     try {
-        console.log(req.body);
+        ////console.log(req.body);
     } catch (error) {
         
     }

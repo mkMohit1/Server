@@ -1,14 +1,14 @@
 const Address = require('../models/Address-model');
 const User = require('../models/User');
+const { login } = require('./auth_controller');
 
 // Fetch addresses based on user ID
 const fetchAddressesByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-
     // Find the user and populate the addresses field
     const user = await User.findById(userId).populate('addresses');
-
+    console.log(user);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -47,6 +47,7 @@ const addUserAddress = async (req, res) => {
         email: customerData.email,
         name: customerData.name,
         role: 'CommonUser', // Default role for new users
+        loginWith:'whatsapp'
       });
 
       await newUser.save();
