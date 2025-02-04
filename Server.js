@@ -17,7 +17,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:3000","http://192.168.1.12:3000"],
+        origin: '*',
         methods: ['GET', 'POST']
     }
 });
@@ -46,7 +46,7 @@ initializeRedis();
   
 
 app.use(cors({
-    origin: ['http://localhost:3000','http://192.168.1.12:3000'], // Allow requests from this origin
+    origin: '*', // Allow requests from this origin
     credentials: true,              // Allow cookies and credentials
   }));
 app.use(express.json());
