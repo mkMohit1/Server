@@ -39,7 +39,7 @@ const fetchProduct = async (req, res) => {
 const fetchAllProduct = async (req, res) => {
     try {
         const allProduct = await Product.find();
-          //console.log("dsdsfbsdfsdfsddfh",allProduct);
+          console.log("dsdsfbsdfsdfsddfh",allProduct);
         if (allProduct.length > 0) {
             res.status(200).json({ products: allProduct });
         } else {
@@ -123,7 +123,6 @@ const deleteProduct = async (req, res) => {
 };
 
 // update a Product
-
 const updateProduct = async (req, res) => {
     try {
       const { id } = req.params;

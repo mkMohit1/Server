@@ -25,6 +25,8 @@ const {
   fetchBlog,
   searchBlogs,
   CoverTopBlog,
+  deleteBlog,
+  updateBlog,
 } = require('../controllers/blog_controller');
 const {
   fetchProduct,
@@ -40,6 +42,7 @@ const { addContact } = require('../controllers/contact_controller');
 const { addUserAddress, updateAddress, fetchAddressesByUserId , deleteAddress} = require('../controllers/customer_controller');
 const { addSubscription } = require('../controllers/subscription_controller');
 const { addConsultation } = require('../controllers/consultation_controller');
+const { getFAQsByPage, createFAQ, deleteFAQ, updateFAQ, fetchFaqs } = require('../controllers/Faqs_controller');
 
 // Multer configuration to handle file uploads
 const storage = multer.diskStorage({
@@ -85,11 +88,13 @@ router.route('/login').post(login);
 // Blog router
 router
   .route('/BlogPost')
-  .post(upload.single('image'), addBlog);
+  .post(upload.single('coverImage'), addBlog);
 router.route('/blogs').get(Blogs);
 router.route('/blog/:id').get(fetchBlog);
 router.route('/blogs/isOnCoverTop/:id').patch(CoverTopBlog);
 router.route('/blogs/search').get(searchBlogs);
+router.route('/admin/deleteBlog/:id').delete(deleteBlog);
+router.route('/admin/updateBlog/:id').put(upload.single('coverImage'), updateBlog);
 
 // Router for contact
 router.route('/contact').post(addContact);
@@ -199,5 +204,12 @@ router.route('/subscribe').post(addSubscription);
 
 // consultation route
 router.route('/consultation').post(addConsultation);
+
+// // routes/faqRoutes.js
+router.route("/fetchFaq").get(fetchFaqs);
+router.route("/:page").get(getFAQsByPage);
+router.route('/createFaq').post(createFAQ);
+router.route('/deleteFAQ/:id').delete(deleteFAQ);
+router.route("/updateFAQ/:id").put(updateFAQ);
 
 module.exports = router;

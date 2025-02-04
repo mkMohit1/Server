@@ -1,5 +1,5 @@
 const Contact = require('../models/contact-model');
-const User = require('../models/commonUser-model'); // Import User model
+const User = require('../models/User'); // Import User model
 const nodemailer = require('nodemailer');
 const { login } = require('./auth_controller');
 
@@ -15,10 +15,10 @@ const transporter = nodemailer.createTransport({
 // Controller function to add the contact
 const addContact = async (req, res) => {
   try {
-const { mobile, email, message, name, type } = req.body;
+const { mobileNumber, email, message, name, type } = req.body;
 
 // Determine the query criteria based on available data
-const query = mobile ? { mobileNumber: mobile } : { loginWith: type };
+const query = mobileNumber ? { mobileNumber } : { loginWith: type };
 
 // Find the user by the determined criteria
 const contactAddInUser = await User.findOne(query);
@@ -28,10 +28,9 @@ const contactAddInUser = await User.findOne(query);
 
     // Email content
     const mailOptions = {
-      from: email,
       to: 'mohityoga.2016@gmail.com', // Admin's email address
       subject: 'New Contact Form Submission',
-      text: `You have received a new message from ${name} (${email}, ${mobile}):\n\nMessage: ${message}`,
+      text: `You have received a new message from ${name} (${email || mobileNumber}):\n\nMessage: ${message}`,
     };
 
     // Send email to admin (use await for cleaner async handling)
@@ -47,6 +46,7 @@ const contactAddInUser = await User.findOne(query);
     const newContact = new Contact({
       email,
       message,
+      mobileNumber,
       Name: name, // Ensure correct casing of "Name"
     });
 

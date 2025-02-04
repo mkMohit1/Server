@@ -4,29 +4,43 @@ const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 
-// Define storage configuration for multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads/'));  // Use absolute path
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));  // Add unique file name
-    }
-});
-
-// Initialize multer upload
-const upload = multer({ storage: storage });
+// Multer configuration to handle file uploads
+const upload = multer({
+    storage: multer.diskStorage({
+      destination: function (req, file, cb) {
+        //console.log('Uploading file:', file.fieldname);
+        cb(null, './uploads/');
+      },
+      filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname));
+      }
+    })
+  });
 
 // Controller function to add a new blog
 const addBlog = async (req, res) => {
     try {
         console.log(req.body);
-        const newBlog = new Blog(req.body);
+        const {title, content, description, isOnCoverTop,tags, author, category} = req.body;
+        console.log("File:", req.file);
+        let imagePath = null;
+        if (req.file) {
+            imagePath = `\\${req.file.path}`;
+        }
+        const newBlog = new Blog({
+            title,  
+            description, 
+            content,
+            tags,
+            isOnCoverTop, 
+            category, 
+            author, 
+            coverImage: imagePath,
+        });
         await newBlog.save();
-        res.status(201).json({ message: 'New blog successfully added', blog: newBlog });
+        return res.status(200).json({ message: 'New blog successfully added', blog: newBlog });
     } catch (error) {
-        res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+        return res.status(500).json({ message: `Internal Server Error: ${error.message}` });
     }
 };
 
@@ -37,6 +51,7 @@ const Blogs = async (req, res) => {
         if (blogs.length === 0) {
             return res.status(404).json({ message: "No blogs found" });
         }
+        console.log(blogs);
         res.status(200).json(blogs);
     } catch (error) {
         res.status(500).json({ message: "Error fetching blogs" });
@@ -106,5 +121,66 @@ const CoverTopBlog = async (req, res) => {
     }
 };
 
+// Delete a product
+const deleteBlog = async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(req.params);
+        const blog = await Blog.findById(id);
+        if (!blog) {
+            return res.status(404).json({ message: "Blog not found" });
+        }
+        // Delete the cover image from the server if it exists
+        if (blog.coverImage) {
+            const imagePath = path.join(__dirname, '..', blog.coverImage); // Adjust the path
+            fs.unlink(imagePath, (err) => {
+                if (err) {
+                    console.error("Error deleting image:", err);
+                } else {
+                    console.log("Image deleted successfully");
+                }
+            });
+        }
+        await Blog.findByIdAndDelete(id);
+        return res.status(200).json({ message: 'Blog deleted successfully', blog });
+    } catch (error) {
+        return res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+    }
+};
+
+// update a Blog
+const updateBlog = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      let imagePath = null;
+      if (req.file) {
+        imagePath = `/uploads/${req.file.filename}`;
+      }
+  
+      const updatedData = { ...req.body };
+      if (imagePath) {
+        updatedData.coverImage = imagePath;
+      }
+  
+      const updatedBlog = await Blog.findByIdAndUpdate(
+        id,
+        updatedData,
+        { new: true, runValidators: true }
+      );
+  
+      if (!updatedBlog) {
+        return res.status(404).json({ message: 'Blog not found' });
+      }
+  
+      return res.status(200).json({
+        message: 'Successfully updated the blog',
+        blog: updatedBlog
+      });
+    } catch (error) {
+      return res.status(500).json({ message: `Error while updating the blog: ${error.message}` });
+    }
+  };
+
 // Export the controller functions
-module.exports = { addBlog, Blogs, fetchBlog, upload, searchBlogs, CoverTopBlog };
+module.exports = { addBlog, Blogs, fetchBlog, upload, searchBlogs, CoverTopBlog, deleteBlog,updateBlog };
