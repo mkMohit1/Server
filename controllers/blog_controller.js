@@ -9,7 +9,7 @@ const upload = multer({
     storage: multer.diskStorage({
       destination: function (req, file, cb) {
         //console.log('Uploading file:', file.fieldname);
-        cb(null, './uploads/');
+        cb(null, './uploads/Blogs');
       },
       filename: function (req, file, cb) {
         cb(null, Date.now() + path.extname(file.originalname));
@@ -20,13 +20,14 @@ const upload = multer({
 // Controller function to add a new blog
 const addBlog = async (req, res) => {
     try {
-        console.log(req.body);
+        //console.log(req.body);
         const {title, content, description, isOnCoverTop,tags, author, category} = req.body;
-        console.log("File:", req.file);
+        //console.log("File:", req.file);
         let imagePath = null;
         if (req.file) {
             imagePath = `\\${req.file.path}`;
         }
+        console.log(imagePath);
         const newBlog = new Blog({
             title,  
             description, 
@@ -51,7 +52,7 @@ const Blogs = async (req, res) => {
         if (blogs.length === 0) {
             return res.status(404).json({ message: "No blogs found" });
         }
-        console.log(blogs);
+        //console.log(blogs);
         res.status(200).json(blogs);
     } catch (error) {
         res.status(500).json({ message: "Error fetching blogs" });
@@ -75,7 +76,7 @@ const fetchBlog = async (req, res) => {
 const searchBlogs = async (req, res) => {
     try {
         const { query } = req.query; // Extract the query parameter
-        console.log(query);
+        //console.log(query);
         if (!query) {
             return res.status(400).json({ message: "Search query is required" });
         }
@@ -113,7 +114,7 @@ const CoverTopBlog = async (req, res) => {
   
       blogToUpdate.isOnCoverTop = 'yes';
       await blogToUpdate.save();
-      console.log(blogToUpdate);
+      //console.log(blogToUpdate);
       res.status(200).json({updateBlog:blogToUpdate, previous:currentCoverTopBlog});
   
     } catch (error) {
@@ -125,7 +126,7 @@ const CoverTopBlog = async (req, res) => {
 const deleteBlog = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log(req.params);
+        //console.log(req.params);
         const blog = await Blog.findById(id);
         if (!blog) {
             return res.status(404).json({ message: "Blog not found" });
@@ -133,13 +134,12 @@ const deleteBlog = async (req, res) => {
         // Delete the cover image from the server if it exists
         if (blog.coverImage) {
             const imagePath = path.join(__dirname, '..', blog.coverImage); // Adjust the path
-            fs.unlink(imagePath, (err) => {
-                if (err) {
-                    console.error("Error deleting image:", err);
-                } else {
-                    console.log("Image deleted successfully");
-                }
-            });
+            try {
+                    await fs.promises.unlink(imagePath);
+                    console.log("Blog image deleted successfully.");
+                  } catch (err) {
+                    console.error("Error deleting Blog image:", err);
+                  }
         }
         await Blog.findByIdAndDelete(id);
         return res.status(200).json({ message: 'Blog deleted successfully', blog });
@@ -150,37 +150,65 @@ const deleteBlog = async (req, res) => {
 
 // update a Blog
 const updateBlog = async (req, res) => {
-    try {
-      const { id } = req.params;
-  
-      let imagePath = null;
-      if (req.file) {
-        imagePath = `/uploads/${req.file.filename}`;
-      }
-  
-      const updatedData = { ...req.body };
-      if (imagePath) {
-        updatedData.coverImage = imagePath;
-      }
-  
-      const updatedBlog = await Blog.findByIdAndUpdate(
-        id,
-        updatedData,
-        { new: true, runValidators: true }
-      );
-  
-      if (!updatedBlog) {
-        return res.status(404).json({ message: 'Blog not found' });
-      }
-  
-      return res.status(200).json({
-        message: 'Successfully updated the blog',
-        blog: updatedBlog
-      });
-    } catch (error) {
-      return res.status(500).json({ message: `Error while updating the blog: ${error.message}` });
+  try {
+    const { id } = req.params;
+
+    // Fetch the existing blog
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
     }
-  };
+
+    let imagePath = blog.coverImage; // Keep existing image unless a new one is uploaded
+
+    // If a new image is uploaded
+    if (req.file) {
+      imagePath = `/uploads/Blogs/${req.file.filename}`;
+
+      // Delete the old image if it exists
+      if (blog.coverImage) {
+        const oldImagePath = path.join(__dirname, '..', blog.coverImage); // Get absolute path
+        console.log("Attempting to delete old blog image:", oldImagePath);
+
+        // Ensure file exists before trying to delete it
+        if (fs.existsSync(oldImagePath)) {
+          try {
+            await fs.promises.unlink(oldImagePath);
+            console.log("Previous blog image deleted successfully.");
+          } catch (err) {
+            console.error("Error deleting previous blog image:", err);
+          }
+        } else {
+          console.warn("Previous blog image file not found:", oldImagePath);
+        }
+      }
+    }
+
+    // Update blog data
+    const updatedData = { ...req.body, coverImage: imagePath };
+
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      id,
+      updatedData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBlog) {
+      return res.status(404).json({ message: "Blog update failed" });
+    }
+
+    return res.status(200).json({
+      message: "Successfully updated the blog",
+      blog: updatedBlog
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: `Error while updating the blog: ${error.message}`
+    });
+  }
+};
+
 
 // Export the controller functions
 module.exports = { addBlog, Blogs, fetchBlog, upload, searchBlogs, CoverTopBlog, deleteBlog,updateBlog };

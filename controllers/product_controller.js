@@ -2,13 +2,14 @@
 const Product = require('../models/Product-model');
 const User = require('../models/User');
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
 
 // Multer configuration to handle file uploads
 const upload = multer({
   storage: multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, './uploads/');
+      cb(null, './uploads/Products');
     },
     filename: function (req, file, cb) {
       cb(null, Date.now() + path.extname(file.originalname));
@@ -39,7 +40,7 @@ const fetchProduct = async (req, res) => {
 const fetchAllProduct = async (req, res) => {
     try {
         const allProduct = await Product.find();
-          console.log("dsdsfbsdfsdfsddfh",allProduct);
+          // console.log("dsdsfbsdfsdfsddfh",allProduct);
         if (allProduct.length > 0) {
             res.status(200).json({ products: allProduct });
         } else {
@@ -52,8 +53,8 @@ const fetchAllProduct = async (req, res) => {
 
 // Add a new product
 const addProduct = async (req, res) => {
-   console.log("Body:", req.body);
-    console.log("File:", req.file);
+  //  console.log("Body:", req.body);
+    // console.log("File:", req.file);
     try {
         const { title, subTitle, description, mrp,inventory,productUsp, category, status, discount, userID } = req.body;
 
@@ -103,7 +104,7 @@ const addProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log(req.params);
+        //console.log(req.params);
         const product = await Product.findById(id);
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
@@ -112,6 +113,17 @@ const deleteProduct = async (req, res) => {
         if (!productAdmin) {
             return res.status(404).json({ message: "ProductAdmin not found" });
         }
+        // Delete the product image from the server if it exists
+                if (product.productImage) {
+                    const imagePath = path.join(__dirname, '..', product.productImage); // Adjust the path
+                    console.log("Deleting the image:", imagePath);
+                  try {
+                    await fs.promises.unlink(imagePath);
+                    console.log("Previous image deleted successfully.");
+                  } catch (err) {
+                    console.error("Error deleting previous image:", err);
+                  }
+                }
         productAdmin.products.pull(product);
         await productAdmin.save();
 
@@ -122,39 +134,63 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-// update a Product
+// Update a Product
 const updateProduct = async (req, res) => {
-    try {
-      const { id } = req.params;
-  
-      let imagePath = null;
-      if (req.file) {
-        imagePath = `/uploads/${req.file.filename}`;
-      }
-  
-      const updatedData = { ...req.body };
-      if (imagePath) {
-        updatedData.productImage = imagePath;
-      }
-  
-      const updatedProduct = await Product.findByIdAndUpdate(
-        id,
-        updatedData,
-        { new: true, runValidators: true }
-      );
-  
-      if (!updatedProduct) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-  
-      return res.status(200).json({
-        message: 'Successfully updated the product',
-        product: updatedProduct
-      });
-    } catch (error) {
-      return res.status(500).json({ message: `Error while updating the product: ${error.message}` });
+  try {
+    const { id } = req.params;
+    //console.log("currentPath",__dirname);
+    // Fetch the existing product
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
     }
-  };
+
+    let imagePath = product.productImage; // Keep existing image unless a new one is uploaded
+
+    // If a new image is uploaded
+    if (req.file) {
+      imagePath = `/uploads/Products/${req.file.filename}`;
+
+      // Delete the old image if it exists
+      if (product.productImage) {
+        const oldImagePath = path.join(__dirname, '..', product.productImage); // Convert to absolute path
+        console.log("Deleting old image:", oldImagePath);
+
+        try {
+          await fs.promises.unlink(oldImagePath);
+          console.log("Previous image deleted successfully.");
+        } catch (err) {
+          console.error("Error deleting previous image:", err);
+        }
+      }
+    }
+
+    // Update product data
+    const updatedData = { ...req.body, productImage: imagePath };
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      updatedData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product update failed" });
+    }
+
+    return res.status(200).json({
+      message: "Successfully updated the product",
+      product: updatedProduct
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: `Error while updating the product: ${error.message}`
+    });
+  }
+};
+
+
 
 // Add this in your product controller
 const validateCart = async (req, res) => {
@@ -194,10 +230,10 @@ const validateCart = async (req, res) => {
 const syncCart = async (req, res) => {
   try {
     const { userId, cartItems,delta } = req.body;
-    console.log("Sync Cart Request:");
+     console.log("Sync Cart Request:");
     console.dir( req.body, { depth: null });
 
-    // Fetch user and populate cart
+    //Fetch user and populate cart
     const user = await User.findById(userId).populate({
       path: 'cart.productId',
       model: 'Product',
@@ -207,12 +243,12 @@ const syncCart = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log("Existing User Cart:", user.cart);
+    // console.log("Existing User Cart:", user.cart);
 
     // Merge cart items
     const mergedCart = [...user.cart];
     // console.log("Merged Cart Before:", mergedCart);
-    console.log("Cart Items before merged:", cartItems);
+    // console.log("Cart Items before merged:", cartItems);
       for (let newItem of cartItems) {
         // console.log("Processing New Item:", newItem);
         // Check if the item already exists in the cart
@@ -222,23 +258,23 @@ const syncCart = async (req, res) => {
   
         if (existingItem) {
           // Update quantity for existing items
-          console.log("inside");
-          console.log("Existing Item:", true);
+          // console.log("inside");
+          // console.log("Existing Item:", true);
           if(existingItem.quantity< newItem.quantity && !delta){
             existingItem.quantity = newItem.quantity;
           }
           if(delta ==1 || delta == -1){
-            console.log("inside2");
+            // console.log("inside2");
             if(existingItem.quantity + delta <1){
               existingItem.quantity += 0;
             }else{
-              console.log("inside3");
+              // console.log("inside3");
               existingItem.quantity += delta;
-              console.log(existingItem.quantity);
+              // console.log(existingItem.quantity);
             }
           }
         } else if(existingItem !== -1) {
-          console.log("Existing Item:", false);
+          // console.log("Existing Item:", false);
           // Add only new items to the cart
           mergedCart.push({
             productId: newItem.productId._id, // Use new item product ID
@@ -264,7 +300,7 @@ const syncCart = async (req, res) => {
       model: 'Product',
     });
 
-    res.json({
+    return res.status(200).json({
       message: "Cart synced successfully",
       cart: updatedUser.cart,
       // cart: updatedUser.cart.map((item) => ({
@@ -274,7 +310,7 @@ const syncCart = async (req, res) => {
     });
   } catch (error) {
     console.error("Error syncing cart:", error);
-    res.status(500).json({ message: `Error syncing cart: ${error.message}` });
+    return res.status(500).json({ message: `Error syncing cart: ${error}` });
   }
 };
 

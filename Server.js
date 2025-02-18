@@ -46,7 +46,9 @@ initializeRedis();
   
 
 app.use(cors({
-    origin: '*', // Allow requests from this origin
+    origin: process.env.NODE_ENV === 'production' 
+    ? 'https://yourproductiondomain.com'  // Production frontend URL
+    : 'http://localhost:3000',
     credentials: true,              // Allow cookies and credentials
   }));
 app.use(express.json());

@@ -14,12 +14,14 @@ const userSchema = new mongoose.Schema({
     loginWith: { type: String, required: true }, // e.g., 'whatsapp', 'voice', 'google'
     role: {
         type: String,
-        enum: ['SuperAdmin', 'ProductAdmin', 'SaleAdmin', 'SaleManager', 'CommonUser'],
+        enum: ['SuperAdmin', 'ProductAdmin', 'SaleAdmin', 'SaleManager', 'CommonUser','InstallerAdmin','Installer'],
         default: 'CommonUser',
     },
+    installerAdmin:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], //for IstallerAdmin
     saleAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SuperAdmin
     productAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SuperAdmin
     saleManager: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleAdmin
+    Installer: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleAdmin
     AdminID:{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // For SaleAdmin or ProductAdmin
     customers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleManager
     contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // General user connections
@@ -31,6 +33,7 @@ const userSchema = new mongoose.Schema({
             addedAt: { type: Date, default: Date.now },
         },
     ],
+    orders:[{orderID:{type:mongoose.Schema.Types.ObjectId, ref:'Transaction'},addedAt:{type:Date, default:Date.now}}],
     products:[{type:mongoose.Schema.Types.ObjectId, ref:'Product'}], //for store the product id's
     createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });

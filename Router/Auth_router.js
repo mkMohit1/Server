@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const passportSetup = require('../config/passport');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const {
   register,
@@ -18,6 +19,7 @@ const {
   checkProduct,
   updateSaleAdmin,
   addCommonUser,
+  fetchInstaller,
 } = require('../controllers/auth_controller');
 const {
   addBlog,
@@ -43,11 +45,29 @@ const { addUserAddress, updateAddress, fetchAddressesByUserId , deleteAddress} =
 const { addSubscription } = require('../controllers/subscription_controller');
 const { addConsultation } = require('../controllers/consultation_controller');
 const { getFAQsByPage, createFAQ, deleteFAQ, updateFAQ, fetchFaqs } = require('../controllers/Faqs_controller');
+const { bookNowTransaction, fetchBookOrder, fetchedAllOrder, updateTechnician, updateStatus, fetchedOrderUser } = require('../controllers/bookController');
 
 // Multer configuration to handle file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './uploads/');
+    let uploadPath = './uploads/'; // Default path
+
+    // Check if request is for blog images
+    if (req.route.path === '/BlogPost' || req.route.path.startsWith('/admin/updateBlog')) {
+      uploadPath = './uploads/Blogs';
+    }
+
+    // Check if request is for Product images
+    if (req.route.path === '/admin/addProduct' || req.route.path.startsWith('/admin/updateProduct')) {
+      uploadPath = './uploads/Products';
+    }
+
+    // Ensure the directory exists
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -103,6 +123,7 @@ router.route('/contact').post(addContact);
 router.route('/admin/addAdmin').post(addAdmin);
 router.route('/admin/getAdmins/:mobileNumber').get(fetchAdmin);
 router.route('/admin/deleteAdmin/:type/:id').delete(deleteAdmin);
+router.route('/admin/installers').get(fetchInstaller);
 router.route('/admin/updateAdmin/:id').put(updateAdmin);
 router.route('/admin/checkProduct/:id').get(checkProduct);
 router.route('/admin/updateSaleAdmin').post(updateSaleAdmin);
@@ -212,4 +233,12 @@ router.route('/createFaq').post(createFAQ);
 router.route('/deleteFAQ/:id').delete(deleteFAQ);
 router.route("/updateFAQ/:id").put(updateFAQ);
 
+
+// router for booking product:
+router.route('/book-now').post(bookNowTransaction);
+router.route('/order/:orderId').get(fetchBookOrder);
+router.route('/orders/booked').get(fetchedAllOrder);
+router.route('/orders/assign-technician').post(updateTechnician);
+router.route(`/order/status/:id`).put(updateStatus);
+router.route(`/orders/:userId`).get(fetchedOrderUser);
 module.exports = router;

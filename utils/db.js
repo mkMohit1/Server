@@ -10,7 +10,7 @@ const connectDb =async ()=>{
         console.log("Database connection successful!");
         return mongoose.connection.db; // Return the native MongoDB database connection
     } catch (error) {
-        console.error("database connection failled");
+        console.error("database connection failled",error);
         process.exit(0);
     }
 };
