@@ -17,8 +17,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
+        origin: process.env.NODE_ENV === 'production' 
+            ? 'https://cadabra.world' // Allow only your production frontend
+            : 'http://localhost:3000', // Allow local development
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
