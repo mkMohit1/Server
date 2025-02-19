@@ -50,7 +50,7 @@ initializeRedis();
 
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-    ? 'https://cadabra.world/'  // Production frontend URL
+    ? 'https://cadabra.world'  // Production frontend URL
     : 'http://localhost:3000',
     credentials: true,              // Allow cookies and credentials
   }));
