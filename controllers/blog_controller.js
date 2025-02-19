@@ -52,7 +52,7 @@ const Blogs = async (req, res) => {
         if (blogs.length === 0) {
             return res.status(404).json({ message: "No blogs found" });
         }
-        //console.log(blogs);
+        console.log(blogs);
         res.status(200).json(blogs);
     } catch (error) {
         res.status(500).json({ message: "Error fetching blogs" });
