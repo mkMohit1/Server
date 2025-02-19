@@ -11,8 +11,27 @@ const path = require('path');
 const http = require('http');
 const redis = require('redis'); // Redis client
 const RedisStore = require('connect-redis')(session); // Use this for version 6.x
-
 const app = express();
+const allowedOrigins = ['https://cadabra.world', 'http://localhost:3000']; // Allow frontend & localhost
+
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    if (allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin); // Dynamically set allowed origin
+    }
+
+    res.header('Access-Control-Allow-Credentials', 'true'); // Allow cookies & sessions
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Allow methods
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allow headers
+
+    // Handle preflight (OPTIONS) requests
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -47,15 +66,27 @@ const redisClient = redis.createClient({
   
 initializeRedis();
   
-
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-    ? 'https://cadabra.world'  // Production frontend URL
-    : 'http://localhost:3000',
-    credentials: true,              // Allow cookies and credentials
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, origin);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, // Required for authentication
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// app.use(cors({
+//     origin: process.env.NODE_ENV === 'production' 
+//     ? 'https://cadabra.world'  // Production frontend URL
+//     : 'http://localhost:3000',
+//     credentials: true,              // Allow cookies and credentials
+//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//     allowedHeaders: ['Content-Type', 'Authorization']
+//   }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
