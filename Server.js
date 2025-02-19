@@ -18,7 +18,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.NODE_ENV === 'production' 
-            ? '*' // Allow only your production frontend
+            ? 'https://cadabra.world' // Allow only your production frontend
             : 'http://localhost:3000', // Allow local development
         methods: ['GET', 'POST'],
         credentials: true
@@ -50,11 +50,11 @@ initializeRedis();
 
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-    ? '*'  // Production frontend URL
+    ? 'https://cadabra.world'  // Production frontend URL
     : 'http://localhost:3000',
     credentials: true,              // Allow cookies and credentials
-    // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    // allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
