@@ -53,6 +53,8 @@ app.use(cors({
     ? 'https://cadabra.world'  // Production frontend URL
     : 'http://localhost:3000',
     credentials: true,              // Allow cookies and credentials
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
