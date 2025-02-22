@@ -7,7 +7,7 @@ const axios = require("axios");
 const fs = require("fs");
 // // const redis = require('redis');
 // const redisClient  = require('../Server'); // Adjust the path to `server.js`
-// ////console.log("vddsfdsbjfj", redisClient);
+// //////console.log("vddsfdsbjfj", redisClient);
 
 // Controller function to handle home route
 const home = async (req, res) => {
@@ -27,7 +27,7 @@ const home = async (req, res) => {
 const sendOtp = async (req, res) => {
   try {
     const { mobileNumber, type, newUser, otp } = req.body;
-    console.log(req.body);
+    //console.log(req.body);
     /// Validate input
     if (!mobileNumber || !type) {
       return res
@@ -154,11 +154,11 @@ const register = async (req, res) => {
       newUser = true;
     }
 
-    //console.log("Received Data:", req.body); // Log the entire body
-    //console.log("Mobile Number:", mobileNumber);
-    //console.log("Entered OTP:", enteredOtp);
-    //console.log("Actual OTP:", actualOtp);
-    //console.log("NewUser",newUser);
+    ////console.log("Received Data:", req.body); // Log the entire body
+    ////console.log("Mobile Number:", mobileNumber);
+    ////console.log("Entered OTP:", enteredOtp);
+    ////console.log("Actual OTP:", actualOtp);
+    ////console.log("NewUser",newUser);
     // Validate input
     if ((!mobileNumber || !enteredOtp) && !req.body.customerData) {
       return res
@@ -230,14 +230,14 @@ const login = async (req, res) => {
   try {
     const { mobileNumber, enteredOtp, actualOtp } = req.body;
 
-    //console.log("Received Data:", req.body); // Log the entire body
-    //console.log("Mobile Number:", mobileNumber);
-    //console.log("Entered OTP:", enteredOtp);
-    //console.log("Actual OTP:", actualOtp);
+    ////console.log("Received Data:", req.body); // Log the entire body
+    ////console.log("Mobile Number:", mobileNumber);
+    ////console.log("Entered OTP:", enteredOtp);
+    ////console.log("Actual OTP:", actualOtp);
 
     // Validate input
     if (!mobileNumber || !enteredOtp) {
-      //console.log("Validation Failed: Missing mobileNumber or enteredOtp");
+      ////console.log("Validation Failed: Missing mobileNumber or enteredOtp");
       return res
         .status(400)
         .json({ message: "Mobile number and OTP are required." });
@@ -245,14 +245,14 @@ const login = async (req, res) => {
 
     // Validate OTP
     if (actualOtp !== parseInt(enteredOtp)) {
-      //console.log("Validation Failed: Invalid OTP");
+      ////console.log("Validation Failed: Invalid OTP");
       return res
         .status(400)
         .json({ message: "Invalid OTP. Please try again." });
     }
 
     // const user = await User.findOne({ mobileNumber });
-    // //console.log('Before Populate:', user.cart);
+    // ////console.log('Before Populate:', user.cart);
 
     const user = await User.findOne({ mobileNumber }).populate(
       "cart.productId"
@@ -283,7 +283,7 @@ const fetchAdmin = async (req, res) => {
   try {
     const { mobileNumber } = req.params;
 
-    //console.log("Fetching user with mobileNumber:", mobileNumber);
+    ////console.log("Fetching user with mobileNumber:", mobileNumber);
 
     // Find the user by mobile number
     const user = await User.findOne({ mobileNumber })
@@ -299,14 +299,14 @@ const fetchAdmin = async (req, res) => {
         },
       }) // Populate customers for SaleManager
       .lean(); // Use lean for performance
-    console.log("user", user);
+    //console.log("user", user);
     if (!user) {
       return res
         .status(404)
         .json({ message: "User not found with the provided mobile number." });
     }
 
-    //console.log("Fetched user:", user);
+    ////console.log("Fetched user:", user);
 
     let responseData;
 
@@ -358,7 +358,7 @@ const fetchInstaller =async(req,res)=>{
     if(!users){
       return res.status(200).json({message:"Their is no installer present in Database"});
     }
-    console.log(users);
+    //console.log(users);
     return res.status(200).json({installers:users});
   } catch (error) {
     return res
@@ -369,7 +369,7 @@ const fetchInstaller =async(req,res)=>{
 
 const addAdmin = async (req, res) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const { mobileNumber, name, email, type, supperAdminID, loginWith } =
       req.body;
 
@@ -402,13 +402,13 @@ const addAdmin = async (req, res) => {
       type == "ProductAdmin" ||
       type == "InstallerAdmin"
     ) {
-      // //console.log("test mk 1");
+      // ////console.log("test mk 1");
       const supperAdmin = await User.findOne({ _id: supperAdminID });
-      //console.log(supperAdmin);
+      ////console.log(supperAdmin);
       if (!supperAdmin) {
         return res.status(404).json({ error: "SuperAdmin not found" });
       }
-      // //console.log("test mk 2");
+      // ////console.log("test mk 2");
       const existingAdmin =
         type === "SaleAdmin"
           ? await User.findOne({ mobileNumber })
@@ -419,7 +419,7 @@ const addAdmin = async (req, res) => {
           .status(400)
           .json({ error: `${type} with this mobile number already exists` });
       }
-      // //console.log("test mk 3");
+      // ////console.log("test mk 3");
       const newUser =
         type === "SaleAdmin"
           ? new User({
@@ -440,7 +440,7 @@ const addAdmin = async (req, res) => {
             });
 
       await newUser.save();
-      // //console.log("test mk 4");
+      // ////console.log("test mk 4");
       // Update SupperAdmin to include this new admin
       if (type === "SaleAdmin") {
         supperAdmin.saleAdmin.push(newUser._id);
@@ -451,7 +451,7 @@ const addAdmin = async (req, res) => {
       }
 
       await supperAdmin.save();
-      // //console.log("test mk 5");
+      // ////console.log("test mk 5");
       return res
         .status(201)
         .json({ message: `${type} registered successfully`, newUser });
@@ -500,14 +500,14 @@ const addAdmin = async (req, res) => {
       if (!InstallerAdmin) {
         return res.status(404).json({ error: "InstallerAdmin not found" });
       }
-      // console.log("installer1");
+      // //console.log("installer1");
       const existingInstaller = await User.findOne({ mobileNumber });
       if (existingInstaller) {
         return res
           .status(400)
           .json({ error: "Installer with this mobile number already exists" });
       }
-      //console.log("installer2");
+      ////console.log("installer2");
       const newInstaller = new User({
         mobileNumber,
         name,
@@ -518,7 +518,7 @@ const addAdmin = async (req, res) => {
       });
 
       await newInstaller.save();
-      console.log("installer3");
+      //console.log("installer3");
       InstallerAdmin.Installer.push(newInstaller._id);
       await InstallerAdmin.save();
 
@@ -537,21 +537,21 @@ const addAdmin = async (req, res) => {
 const deleteAdmin = async (req, res) => {
   try {
     const { type, id } = req.params;
-    console.log(req.params);
+    //console.log(req.params);
 
     if (type === "SaleManager") {
       const saleManager = await User.findOne({ _id: id });
       if (!saleManager) {
         return res.status(404).json({ message: "Sale Manager not found" });
       }
-      console.log("saleManager", saleManager);
+      //console.log("saleManager", saleManager);
       if (saleManager.AdminID) {
         const saleAdmin = await User.findOne({ _id: saleManager.AdminID });
-        console.log("saleAdmin", saleAdmin);
+        //console.log("saleAdmin", saleAdmin);
 
         if (saleAdmin) {
           saleAdmin.saleManager.pull(id);
-          console.log("pull from saleAdmin");
+          //console.log("pull from saleAdmin");
           await saleAdmin.save();
         }
       }
@@ -771,8 +771,8 @@ const updateAdmin = async (req, res) => {
     const { id } = req.params;
     const { name, email, mobileNumber, type } = req.body;
     let updatedAdmin;
-    console.log("mkdsfds", req.body);
-    console.log("mkdsfds", req.params);
+    //console.log("mkdsfds", req.body);
+    //console.log("mkdsfds", req.params);
     // Find and update based on type
     switch (type) {
       case "SaleAdmin":
@@ -875,7 +875,7 @@ const updateSaleAdmin = async (req, res) => {
       }
 
       const newSaleAdmin = await SaleAdmin.findById(newSaleAdminId);
-      //console.log(newSaleAdmin);
+      ////console.log(newSaleAdmin);
       if (!newSaleAdmin) {
         return res.status(404).json({ error: "New SaleAdmin not found" });
       }
@@ -977,15 +977,17 @@ const updateSaleAdmin = async (req, res) => {
 const users = async (req, res) => {
   try {
     const users = await User.find();
-    ////console.log(users);
+    //////console.log(users);
+
     if (users.length == 0) {
-      ////console.log("Inside the if condition");
+      //////console.log("Inside the if condition");
       const mobile = "8860721857";
       const defaultSaleNumber = "1234567890";
       const defaultProductNumber = "1234567891";
       const defaultManagerNumber = "1234567892";
       const defaultInstallerAdmin = "1234567893";
-      ////console.log("Admin not found");
+      const defaultGeneralAdmin = "1234567894";
+      //////console.log("Admin not found");
 
       // Create SuperAdmin
       const newUser = new User({
@@ -1002,6 +1004,7 @@ const users = async (req, res) => {
         name: "Default installer Admin",
         email: "defaultinstallerAdmin@gmail.com",
         role: "InstallerAdmin",
+        AdminID: newUser._id,
         loginWith: "whatsapp",
       });
 
@@ -1033,6 +1036,16 @@ const users = async (req, res) => {
         role: "SaleManager",
         loginWith: "whatsapp",
       });
+      const generalAdmin =new User({
+        mobileNumber: defaultGeneralAdmin,
+        name: "General Admin",
+        email: "generalAdmin@gmail.com",
+        role: "GeneralAdmin",
+        AdminID: newUser._id,
+        loginWith: "whatsapp",
+      });
+  
+      newUser.generalAdmin.push(generalAdmin._id);  
       // Associate the SaleAdmin and ProductAdmin with the SuperAdmin
       newUser.saleAdmin.push(newSaleAdmin._id);
       newUser.productAdmin.push(newProductAdmin._id);
@@ -1043,10 +1056,11 @@ const users = async (req, res) => {
       await newProductAdmin.save();
       await newSaleManager.save();
       await installerAdmin.save();
+      await generalAdmin.save();
 
-      ////console.log("Default admins created and linked to SupperAdmin successfully.");
+      //////console.log("Default admins created and linked to SupperAdmin successfully.");
     }
-    ////console.log(users);
+    //////console.log(users);
     return res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching users" });
@@ -1056,7 +1070,7 @@ const users = async (req, res) => {
 // Controller function to get perticular user
 const singleUser = async (req, res) => {
   try {
-    ////console.log(req.params);
+    //////console.log(req.params);
     const user = await User.findOne({ mobileNumber: req.params.mobile });
     if (user.length === 0) {
       return res.status(404).json({ message: "No users found" });
@@ -1069,7 +1083,7 @@ const singleUser = async (req, res) => {
 
 const addCommonUser = async (req, res) => {
   try {
-    ////console.log(req.body);
+    //////console.log(req.body);
   } catch (error) {}
 };
 

@@ -21,16 +21,13 @@ const upload = multer({
 const fetchProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        // console.log(req.params);
-        const productAdmin = await User.findOne({ _id: id });
-
-        if (!productAdmin) {
-            return res.status(404).json({ message: "ProductAdmin not found" });
+        //console.log(req.params);
+        const product = await Product.findOne({ _id: id });
+        //console.log("fetchproduct",product);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
         }
-        //console.log(productAdmin);
-        const populatedProductAdmin = await productAdmin.populate('products');
-        //console.log(populatedProductAdmin);
-        res.status(200).json({ products: populatedProductAdmin.products });
+        res.status(200).json({ products: product });
     } catch (error) {
         res.status(500).json({ message: `Internal Server Error: ${error.message}` });
     }
@@ -40,7 +37,7 @@ const fetchProduct = async (req, res) => {
 const fetchAllProduct = async (req, res) => {
     try {
         const allProduct = await Product.find();
-          // console.log("dsdsfbsdfsdfsddfh",allProduct);
+          // //console.log("dsdsfbsdfsdfsddfh",allProduct);
         if (allProduct.length > 0) {
             res.status(200).json({ products: allProduct });
         } else {
@@ -51,10 +48,27 @@ const fetchAllProduct = async (req, res) => {
     }
 };
 
+//Fetch similar products
+const fetchSimilarProduct = async(req,res)=>{
+  try {
+    const {category} = req.params;
+    //console.log(category);
+    const similarProducts= await Product.find({category});
+    if(!similarProducts){
+      return res.status(404).json({message:'Their is no similar products'});
+    }
+    //console.log(similarProducts);
+    return res.status(200).json({products:similarProducts});
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({message:`Error while fetching similar products: ${error}`});
+  }
+}
+
 // Add a new product
 const addProduct = async (req, res) => {
-  //  console.log("Body:", req.body);
-    // console.log("File:", req.file);
+  //  //console.log("Body:", req.body);
+    // //console.log("File:", req.file);
     try {
         const { title, subTitle, description, mrp,inventory,productUsp, category, status, discount, userID } = req.body;
 
@@ -72,7 +86,7 @@ const addProduct = async (req, res) => {
         if (req.file) {
             imagePath = `\\${req.file.path}`;
         }
-        //console.log("new",imagePath);
+        ////console.log("new",imagePath);
         const newProduct = new Product({
             title, 
             subTitle, 
@@ -104,7 +118,7 @@ const addProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        //console.log(req.params);
+        ////console.log(req.params);
         const product = await Product.findById(id);
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
@@ -116,10 +130,10 @@ const deleteProduct = async (req, res) => {
         // Delete the product image from the server if it exists
                 if (product.productImage) {
                     const imagePath = path.join(__dirname, '..', product.productImage); // Adjust the path
-                    console.log("Deleting the image:", imagePath);
+                    //console.log("Deleting the image:", imagePath);
                   try {
                     await fs.promises.unlink(imagePath);
-                    console.log("Previous image deleted successfully.");
+                    //console.log("Previous image deleted successfully.");
                   } catch (err) {
                     console.error("Error deleting previous image:", err);
                   }
@@ -138,7 +152,7 @@ const deleteProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    //console.log("currentPath",__dirname);
+    ////console.log("currentPath",__dirname);
     // Fetch the existing product
     const product = await Product.findById(id);
     if (!product) {
@@ -154,11 +168,11 @@ const updateProduct = async (req, res) => {
       // Delete the old image if it exists
       if (product.productImage) {
         const oldImagePath = path.join(__dirname, '..', product.productImage); // Convert to absolute path
-        console.log("Deleting old image:", oldImagePath);
+        //console.log("Deleting old image:", oldImagePath);
 
         try {
           await fs.promises.unlink(oldImagePath);
-          console.log("Previous image deleted successfully.");
+          //console.log("Previous image deleted successfully.");
         } catch (err) {
           console.error("Error deleting previous image:", err);
         }
@@ -190,8 +204,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-
-
 // Add this in your product controller
 const validateCart = async (req, res) => {
   const { cartItems } = req.body;
@@ -202,7 +214,7 @@ const validateCart = async (req, res) => {
 
   const validatedItems = [];
   const errors = [];
-  // console.log(cartItems);
+  // //console.log(cartItems);
   for (const item of cartItems) {
     const product = await Product.findById(item._id);
     if (!product) {
@@ -226,11 +238,10 @@ const validateCart = async (req, res) => {
   res.json({ validatedItems, errors });
 };
 
-
 const syncCart = async (req, res) => {
   try {
     const { userId, cartItems,delta } = req.body;
-     console.log("Sync Cart Request:");
+     //console.log("Sync Cart Request:");
     console.dir( req.body, { depth: null });
 
     //Fetch user and populate cart
@@ -243,14 +254,14 @@ const syncCart = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // console.log("Existing User Cart:", user.cart);
+    //console.log("Existing User Cart:", user.cart);
 
     // Merge cart items
     const mergedCart = [...user.cart];
-    // console.log("Merged Cart Before:", mergedCart);
-    // console.log("Cart Items before merged:", cartItems);
+    // //console.log("Merged Cart Before:", mergedCart);
+    // //console.log("Cart Items before merged:", cartItems);
       for (let newItem of cartItems) {
-        // console.log("Processing New Item:", newItem);
+        // //console.log("Processing New Item:", newItem);
         // Check if the item already exists in the cart
         const existingItem = mergedCart.find(
           (item) => item.productId._id == newItem.productId._id
@@ -258,23 +269,23 @@ const syncCart = async (req, res) => {
   
         if (existingItem) {
           // Update quantity for existing items
-          // console.log("inside");
-          // console.log("Existing Item:", true);
+          // //console.log("inside");
+          // //console.log("Existing Item:", true);
           if(existingItem.quantity< newItem.quantity && !delta){
             existingItem.quantity = newItem.quantity;
           }
           if(delta ==1 || delta == -1){
-            // console.log("inside2");
+            // //console.log("inside2");
             if(existingItem.quantity + delta <1){
               existingItem.quantity += 0;
             }else{
-              // console.log("inside3");
+              // //console.log("inside3");
               existingItem.quantity += delta;
-              // console.log(existingItem.quantity);
+              // //console.log(existingItem.quantity);
             }
           }
         } else if(existingItem !== -1) {
-          // console.log("Existing Item:", false);
+          // //console.log("Existing Item:", false);
           // Add only new items to the cart
           mergedCart.push({
             productId: newItem.productId._id, // Use new item product ID
@@ -283,7 +294,7 @@ const syncCart = async (req, res) => {
           });
         }
       }
-      // console.log("Merged Cart:", mergedCart);   
+      // //console.log("Merged Cart:", mergedCart);   
 
     // Update user's cart in the database
     user.cart = mergedCart.map((item) => ({
@@ -314,12 +325,10 @@ const syncCart = async (req, res) => {
   }
 };
 
-
-
 const deletedCartItem = async (req, res) => {
   try {
     const { userId, productId } = req.body; // Extract userId and productId from the request body
-    console.log("delete",req.body);
+    //console.log("delete",req.body);
     // Find the user
     const user = await User.findById(userId);
     if (!user) {
@@ -350,6 +359,4 @@ const deletedCartItem = async (req, res) => {
   }
 };
 
-
-
-module.exports = { addProduct, deleteProduct, fetchProduct, fetchAllProduct, updateProduct, validateCart, syncCart , deletedCartItem};
+module.exports = { addProduct, deleteProduct, fetchProduct, fetchAllProduct, updateProduct, validateCart, syncCart , deletedCartItem,fetchSimilarProduct};

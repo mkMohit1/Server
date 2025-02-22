@@ -36,7 +36,7 @@ const contactAddInUser = await User.findOne(query);
     // Send email to admin (use await for cleaner async handling)
     try {
       await transporter.sendMail(mailOptions);
-      console.log('Email sent successfully!');
+      //console.log('Email sent successfully!');
     } catch (error) {
       console.error('Error sending email:', error);
       return res.status(500).send('Failed to send notification');

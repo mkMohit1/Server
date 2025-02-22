@@ -8,7 +8,7 @@ const path = require('path');
 const upload = multer({
     storage: multer.diskStorage({
       destination: function (req, file, cb) {
-        //console.log('Uploading file:', file.fieldname);
+        ////console.log('Uploading file:', file.fieldname);
         cb(null, './uploads/Blogs');
       },
       filename: function (req, file, cb) {
@@ -20,14 +20,14 @@ const upload = multer({
 // Controller function to add a new blog
 const addBlog = async (req, res) => {
     try {
-        //console.log(req.body);
+        ////console.log(req.body);
         const {title, content, description, isOnCoverTop,tags, author, category} = req.body;
-        //console.log("File:", req.file);
+        ////console.log("File:", req.file);
         let imagePath = null;
         if (req.file) {
             imagePath = `\\${req.file.path}`;
         }
-        console.log(imagePath);
+        //console.log(imagePath);
         const newBlog = new Blog({
             title,  
             description, 
@@ -52,7 +52,7 @@ const Blogs = async (req, res) => {
         if (blogs.length === 0) {
             return res.status(404).json({ message: "No blogs found" });
         }
-        console.log(blogs);
+        //console.log(blogs);
         res.status(200).json(blogs);
     } catch (error) {
         res.status(500).json({ message: "Error fetching blogs" });
@@ -76,7 +76,7 @@ const fetchBlog = async (req, res) => {
 const searchBlogs = async (req, res) => {
     try {
         const { query } = req.query; // Extract the query parameter
-        //console.log(query);
+        ////console.log(query);
         if (!query) {
             return res.status(400).json({ message: "Search query is required" });
         }
@@ -114,7 +114,7 @@ const CoverTopBlog = async (req, res) => {
   
       blogToUpdate.isOnCoverTop = 'yes';
       await blogToUpdate.save();
-      //console.log(blogToUpdate);
+      ////console.log(blogToUpdate);
       res.status(200).json({updateBlog:blogToUpdate, previous:currentCoverTopBlog});
   
     } catch (error) {
@@ -126,7 +126,7 @@ const CoverTopBlog = async (req, res) => {
 const deleteBlog = async (req, res) => {
     try {
         const { id } = req.params;
-        //console.log(req.params);
+        ////console.log(req.params);
         const blog = await Blog.findById(id);
         if (!blog) {
             return res.status(404).json({ message: "Blog not found" });
@@ -136,7 +136,7 @@ const deleteBlog = async (req, res) => {
             const imagePath = path.join(__dirname, '..', blog.coverImage); // Adjust the path
             try {
                     await fs.promises.unlink(imagePath);
-                    console.log("Blog image deleted successfully.");
+                    //console.log("Blog image deleted successfully.");
                   } catch (err) {
                     console.error("Error deleting Blog image:", err);
                   }
@@ -168,13 +168,13 @@ const updateBlog = async (req, res) => {
       // Delete the old image if it exists
       if (blog.coverImage) {
         const oldImagePath = path.join(__dirname, '..', blog.coverImage); // Get absolute path
-        console.log("Attempting to delete old blog image:", oldImagePath);
+        //console.log("Attempting to delete old blog image:", oldImagePath);
 
         // Ensure file exists before trying to delete it
         if (fs.existsSync(oldImagePath)) {
           try {
             await fs.promises.unlink(oldImagePath);
-            console.log("Previous blog image deleted successfully.");
+            //console.log("Previous blog image deleted successfully.");
           } catch (err) {
             console.error("Error deleting previous blog image:", err);
           }

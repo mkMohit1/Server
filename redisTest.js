@@ -7,11 +7,11 @@ const testRedis = async (req, res) => {
 
         // Store a value with TTL
         await redisClient.setEx(key, 60, value); // TTL: 60 seconds
-        console.log(`Set ${key} = ${value}`);
+        //console.log(`Set ${key} = ${value}`);
 
         // Retrieve the value
         const result = await redisClient.get(key);
-        console.log(`Retrieved ${key} = ${result}`);
+        //console.log(`Retrieved ${key} = ${result}`);
 
         res.status(200).json({ message: `Redis test successful: ${result}` });
     } catch (err) {

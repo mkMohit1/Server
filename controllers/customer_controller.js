@@ -8,7 +8,7 @@ const fetchAddressesByUserId = async (req, res) => {
     const { userId } = req.params;
     // Find the user and populate the addresses field
     const user = await User.findById(userId).populate('addresses');
-    console.log(user);
+    //console.log(user);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -28,7 +28,7 @@ const addUserAddress = async (req, res) => {
   try {
     const { customerData, currentUser } = req.body;
     let populatedUser;
-    console.log("address", req.body);
+    //console.log("address", req.body);
     // Check if the current user is a SaleManager
     const saleManager = await User.findOne({ _id: currentUser.userId, role: 'SaleManager' });
     if (!saleManager && currentUser.role !== 'CommonUser') {
@@ -39,7 +39,7 @@ const addUserAddress = async (req, res) => {
     }
     // Check if user already exists by mobile number
     let existingUser = await User.findById({_id:currentUser.userId});
-    console.log(existingUser);
+    //console.log(existingUser);
     if (saleManager) {
       // Create a new user if not found
       const newUser = new User({
@@ -53,14 +53,14 @@ const addUserAddress = async (req, res) => {
       await newUser.save();
       saleManager.customers.push(newUser._id);
         await saleManager.save();
-      // console.log("mnk11");
+      // //console.log("mnk11");
       // Create new address and link it to the user
       const newAddress = new Address({ 
         ...customerData,
         addressType: customerData.addressType || 'House', // Default to 'House' if not provided
       });
       await newAddress.save();
-      // console.log("mnk12");
+      // //console.log("mnk12");
       // Link address to the user
       newUser.addresses.push(newAddress._id);
       await newUser.save();
@@ -93,8 +93,8 @@ const updateAddress = async (req, res) => {
   try {
     const addressId = req.params.id; // Get the address ID from the route parameters
     const { customerData, currentUser } = req.body; // Extract the new data and current user info from the request body
-    console.log(req.body);
-    console.log(req.params);
+    //console.log(req.body);
+    //console.log(req.params);
     // Validate current user's role, if necessary
     if (currentUser.role !== 'SaleManager' && currentUser.role !== 'CommonUser') {
       return res.status(403).json({ message: 'Unauthorized: Only admins and common users can update addresses' });
@@ -102,7 +102,7 @@ const updateAddress = async (req, res) => {
 
     // Find the existing address by ID
     const address = await Address.findById(addressId);
-    console.log("temp",address);
+    //console.log("temp",address);
     if (!address) {
       return res.status(404).json({ message: 'Address not found' });
     }
@@ -113,7 +113,7 @@ const updateAddress = async (req, res) => {
         address[key] = customerData[key];
       }
     });
-    console.log("currentEddress",address);
+    //console.log("currentEddress",address);
     // Save the updated address
     await address.save();
 
@@ -128,8 +128,8 @@ const deleteAddress = async (req, res) => {
   try {
     const addressId = req.params.id; // Extract the address ID from the request parameters
     const { userId } = req.body; // User ID should be sent in the request body
-    console.log(req.params);
-    console.log(req.body);
+    //console.log(req.params);
+    //console.log(req.body);
     // Find the user who owns the address
     const user = await User.findById(userId);
     if (!user) {

@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     loginWith: { type: String, required: true }, // e.g., 'whatsapp', 'voice', 'google'
     role: {
         type: String,
-        enum: ['SuperAdmin', 'ProductAdmin', 'SaleAdmin', 'SaleManager', 'CommonUser','InstallerAdmin','Installer'],
+        enum: ['SuperAdmin', 'ProductAdmin', 'SaleAdmin', 'SaleManager', 'CommonUser','InstallerAdmin','Installer','GeneralAdmin'],
         default: 'CommonUser',
     },
     installerAdmin:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], //for IstallerAdmin
@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema({
     productAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SuperAdmin
     saleManager: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleAdmin
     Installer: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleAdmin
+    generalAdmin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For generalAdmin
     AdminID:{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // For SaleAdmin or ProductAdmin
     customers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // For SaleManager
     contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // General user connections

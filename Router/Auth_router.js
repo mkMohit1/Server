@@ -38,12 +38,13 @@ const {
   updateProduct,
   validateCart,
   syncCart,
-  deletedCartItem
+  deletedCartItem,
+  fetchSimilarProduct
 } = require('../controllers/product_controller');
 const { addContact } = require('../controllers/contact_controller');
 const { addUserAddress, updateAddress, fetchAddressesByUserId , deleteAddress} = require('../controllers/customer_controller');
-const { addSubscription } = require('../controllers/subscription_controller');
-const { addConsultation } = require('../controllers/consultation_controller');
+const { addSubscription, fetchSubscription, deleteSubscription } = require('../controllers/subscription_controller');
+const { addConsultation, fetchConsultation, updateConsultation,deleteConsultation } = require('../controllers/consultation_controller');
 const { getFAQsByPage, createFAQ, deleteFAQ, updateFAQ, fetchFaqs } = require('../controllers/Faqs_controller');
 const { bookNowTransaction, fetchBookOrder, fetchedAllOrder, updateTechnician, updateStatus, fetchedOrderUser } = require('../controllers/bookController');
 
@@ -84,7 +85,7 @@ const upload = multer({ storage: storage });
 //   }
 
 //   if (!req.user) {
-//     console.log('Session cleared as user not found.');
+//     //console.log('Session cleared as user not found.');
 //     req.session.destroy((err) => {
 //       if (err) {
 //         console.error('Failed to destroy session:', err);
@@ -140,6 +141,7 @@ router
 router.route('/admin/deleteProduct/:id').delete(deleteProduct);
 router.route('/admin/getProducts/:id').get(fetchProduct);
 router.route('/products/allproducts').get(fetchAllProduct);
+router.route('/similarProducts/:category').get(fetchSimilarProduct);
 router.route('/admin/updateProduct/:id').put(upload.single('productImage'), updateProduct);
 router.route('/product/validate-cart').post(validateCart);
 router.route('/user/sync-cart').post(syncCart);
@@ -170,7 +172,7 @@ router.route('/auth/google/callback').get((req, res, next) => {
 
     if (!user) {
       // Log the info object to check for the error message
-      console.log('Passport Info:', info);
+      //console.log('Passport Info:', info);
       const error = info?.message || 'Authentication failed.';
       return res.redirect(`http://localhost:3000?error=${encodeURIComponent(error)}`);
     }
@@ -222,9 +224,14 @@ router.route('/auth/logout').get((req, res) => {
 
 // subscription route
 router.route('/subscribe').post(addSubscription);
+router.route('/fetchSubscriptions').get(fetchSubscription);
+router.route('/deleteSubscription/:id').delete(deleteSubscription);
 
 // consultation route
 router.route('/consultation').post(addConsultation);
+router.route('/fetchConsultations').get(fetchConsultation);
+router.route(`/updateConsultation/:id`).put(updateConsultation);
+router.route('/deleteConsultation/:id').delete(deleteConsultation);
 
 // // routes/faqRoutes.js
 router.route("/fetchFaq").get(fetchFaqs);

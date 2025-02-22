@@ -58,7 +58,7 @@ const redisClient = redis.createClient({
   const initializeRedis = async () => {
     try {
       await redisClient.connect();
-      console.log('Redis client connected successfully');
+      //console.log('Redis client connected successfully');
     } catch (error) {
       console.error('Error connecting Redis client:', error);
     }
@@ -111,18 +111,18 @@ app.use("/", authRouter);
 
 // Handle WebSocket connections
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+    //console.log('A user connected:', socket.id);
     // Identify super admin
     socket.on('supperAdminLogin', () => {
         global.superAdminSocket = socket;
-        console.log('Supper Admin logged in', socket.id);
+        //console.log('Supper Admin logged in', socket.id);
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
         if (socket === global.superAdminSocket) {
             global.superAdminSocket = null;
-            console.log('Supper Admin disconnected');
+            //console.log('Supper Admin disconnected');
         }
     });
 });
@@ -137,16 +137,16 @@ const PORT = process.env.PORT || 5000;
 connectDb().then(async (db) => {
     const collections = await db.listCollections({ name: 'Users' }).toArray();
     if (collections.length === 0) {
-        console.log("Creating collection Users");
+        //console.log("Creating collection Users");
         await db.createCollection('Users');
     } else {
-        console.log("Collection Users already exists");
+        //console.log("Collection Users already exists");
     }
     server.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server is running on port ${PORT}`);
+        //console.log(`Server is running on port ${PORT}`);
     });
 }).catch((err) => {
     console.error("Error connecting to database:", err);
 });
-//console.log("erddsgfvdsfs",redisClient);
+////console.log("erddsgfvdsfs",redisClient);
 module.exports = redisClient;

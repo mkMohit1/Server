@@ -6,7 +6,7 @@ const Address = require("../models/Address-model");
 const bookNowTransaction = async (req, res) => {
   try {
     const { userID, orderItems, coupon, amountPay, address } = req.body;
-    //console.log(req.body);
+    ////console.log(req.body);
     // Validate input
     if (!userID || !orderItems || orderItems.length === 0 || !address) {
       return res.status(400).json({ message: "Invalid request. All fields are required." });
@@ -35,7 +35,7 @@ const bookNowTransaction = async (req, res) => {
       paymentMethod: "COD", // Payment is deferred
       address,
     });
-    console.log(newTransaction);
+    //console.log(newTransaction);
     user.orders.push({orderID:newTransaction._id});
      // ✅ Clear user's cart after successful order
     user.cart = []; // Clear the cart array in User
@@ -96,7 +96,7 @@ const fetchedAllOrder = async(req,res)=>{
 const updateTechnician =async(req,res)=>{
   try {
     const { orderId, technicianId } = req.body;
-    console.log("dhfdsfjdfhsd",req.body);
+    //console.log("dhfdsfjdfhsd",req.body);
     if (!orderId || !technicianId) {
       return res.status(400).json({ message: "Order ID and Technician ID are required" });
     }
@@ -130,7 +130,7 @@ const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, paymentMethod } = req.body;
-    console.log(req.body);
+    //console.log(req.body);
     // Find the order by ID
     const order = await Transaction.findById(id);
     if (!order) {
@@ -188,7 +188,7 @@ const fetchedOrderUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log("Populated Orders:", user.orders);
+    //console.log("Populated Orders:", user.orders);
     return res.status(200).json({ orders: user.orders });
   } catch (error) {
     console.error("Failed to fetch orders:", error);
